@@ -20,7 +20,8 @@ pub struct Material {
 
 #[derive(Deserialize, Debug)]
 struct MaterialFile {
-    _name: String,
+    #[allow(dead_code)]
+    name: String,
     shaders: MaterialFileShaders,
     parameters: Option<MaterialFileParameters>,
 }

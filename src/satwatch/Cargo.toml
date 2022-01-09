@@ -26,6 +26,9 @@ branch = "main"
 git = "https://github.com/imgui-rs/imgui-rs"
 branch = "main"
 
+[dependencies.lazy_static]
+version = "1.4.0"
+
 [dependencies.legion]
 version = "0.4.0"
 

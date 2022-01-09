@@ -11,6 +11,7 @@ use sdl2::{
 use imgui_glow_renderer::AutoRenderer;
 
 use crate::space::world_control::WorldControl;
+use crate::util::imgui_logger::*;
 use crate::util::input_events::sdl_to_our_event;
 use crate::util::sdl2_imgui_tmpfix::SdlPlatform;
 use glow::HasContext;
@@ -23,6 +24,9 @@ fn glow_context(window: &Window) -> glow::Context {
 }
 
 fn main() -> Result<(), String> {
+    log::set_max_level(log::LevelFilter::Debug);
+    let mut imgui_logger = ImguiLoggerUi::init();
+
     let sdl = sdl2::init()?;
     let _image = sdl2::image::init(sdl2::image::InitFlag::all())?;
 
@@ -94,11 +98,10 @@ fn main() -> Result<(), String> {
         }
         platform.prepare_frame(&mut imgui, &window, &event_pump);
         let mut ui = imgui.frame();
-
+        imgui_logger.draw(&mut ui);
         if let Err(e) = world_control.ui(imgui_renderer.gl_context(), &mut world, &mut ui) {
             log::warn!("Issues during ui draw: {}", e);
         }
-
         let draw_data = imgui.render();
 
         unsafe {
