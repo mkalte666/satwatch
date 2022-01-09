@@ -8,7 +8,9 @@ use std::collections::HashMap;
 use std::ops::Sub;
 use std::sync::mpsc::{channel, Receiver, Sender, TryRecvError};
 use std::thread;
-use std::time::{Duration, Instant, SystemTime};
+use std::time::{Duration, Instant};
+
+use log::{error, warn};
 
 pub fn element_copy(element: &Elements) -> Elements {
     let classification = match element.classification {
@@ -187,18 +189,23 @@ impl WorkerData {
                         let state = StateVector::from(o_pred);
                         orb_points.push(state.coordinate);
                     }*/
-                    self.element_tx.send(ElementUpdate {
+                    if let Err(e) = self.element_tx.send(ElementUpdate {
                         id: *id,
                         state,
                         orbit_points: None,
-                    });
+                    }) {
+                        error!(
+                            "Something is going very wrong the the TLE Simulation thread: {}",
+                            e
+                        );
+                    }
                 }
             }
         }
         let end = Instant::now();
         let sim_time = end.sub(start);
         if sim_time > Duration::from_secs_f64(1.0 / 60.0) {
-            eprintln!("Warning: Sim took to long. {}ms", sim_time.as_millis())
+            warn!("Sim took to long. {}ms", sim_time.as_millis())
         }
     }
 }

@@ -26,6 +26,7 @@ pub fn gen_orbit_points(points: Vec<Coordinate>, world_scale: f64) -> (Vec<Vec3>
     (results, indices)
 }
 
+#[allow(dead_code)]
 pub fn gen_flat_circle_xz(radius: f32, elements: u32) -> (Vec<Vec3>, Vec<u32>) {
     let mut results = Vec::new();
 

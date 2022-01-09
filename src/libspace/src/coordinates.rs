@@ -66,7 +66,7 @@ impl Coordinate {
     }
 
     fn earth_angle_at(&self) -> f64 {
-        let t = (self.time / (60.0 * 24.0));
+        let t = self.time / (60.0 * 24.0);
         (2.0 * std::f64::consts::PI * (0.7790572732640 + 1.00273781191135448 * t))
             % (2.0 * std::f64::consts::PI)
     }
@@ -131,7 +131,6 @@ impl Coordinate {
     }
 }
 
-use crate::planets::earth::Earth;
 use sgp4::Prediction;
 use std::fmt::{Display, Formatter};
 

@@ -5,9 +5,8 @@ use crate::components::{Camera, MaterialComponent, VertexList, WorldTransform};
 use crate::space::dbui::SelectionChanges;
 use crate::util::input_events::Event;
 use crate::util::vertex_tools::*;
-use glam::{EulerRot, Quat, Vec3, Vec4};
+use glam::{Quat, Vec3, Vec4};
 use libspace::coordinates::Coordinate;
-use libspace::coordinates::CoordinateSystem::EarthCenteredInertial;
 use libspace::coordinates::*;
 use libspace::element_db::ElementDb;
 use libspace::element_engine::{ElementEngine, ElementUpdate};
@@ -22,7 +21,6 @@ pub struct WorldControl {
     gl_origin: Coordinate,
     world_scale: f64,
     element_db: ElementDb,
-    camera_entity: Option<Entity>,
     camera_velocity: Vec3,
     camera_rot: Vec3,
     timebase: Timebase,
@@ -33,7 +31,6 @@ pub struct WorldControl {
 }
 
 struct ElementEntity {
-    id: u64,
     entity: Entity,
     orbit: Option<Entity>,
 }
@@ -47,7 +44,6 @@ impl WorldControl {
             gl_origin: Coordinate::new(CoordinateSystem::EarthCenteredInertial, [0.0, 0.0, 0.0]),
             world_scale: 1.0,
             element_db: ElementDb::new(),
-            camera_entity: None,
             camera_velocity: Vec3::new(0.0, 0.0, 0.0),
             camera_rot: Vec3::new(0.0, 0.0, 0.0),
             timebase: Timebase::new(),
@@ -118,7 +114,7 @@ impl WorldControl {
         Ok(())
     }
 
-    pub fn handle_input(&mut self, _gl: &glow::Context, world: &mut World, event: Event) {
+    pub fn handle_input(&mut self, _gl: &glow::Context, _world: &mut World, event: Event) {
         match event {
             Event::None => {}
             Event::HardStop => self.camera_velocity = Vec3::new(0.0, 0.0, 0.0),
@@ -291,7 +287,6 @@ impl WorldControl {
                 self.sat_entities.insert(
                     element.norad_id,
                     ElementEntity {
-                        id: element.norad_id,
                         entity,
                         orbit: None,
                     },

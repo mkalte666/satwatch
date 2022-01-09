@@ -65,6 +65,7 @@ fn handle_key_modifier(io: &mut Io, keymod: &Mod) {
 }
 
 /// Map an imgui::MouseCursor to an equivalent sdl2::mouse::SystemCursor.
+#[allow(dead_code)]
 fn to_sdl_cursor(cursor: MouseCursor) -> SystemCursor {
     match cursor {
         MouseCursor::Arrow => SystemCursor::Arrow,
@@ -94,6 +95,7 @@ fn to_sdl_cursor(cursor: MouseCursor) -> SystemCursor {
 ///     platform.handle_event(&mut imgui, &event);
 /// }
 /// ```
+#[allow(dead_code)]
 pub fn filter_event(window: &Window, event: &Event) -> bool {
     Some(window.id()) == event.get_window_id()
 }
@@ -109,6 +111,7 @@ pub fn filter_event(window: &Window, event: &Event) -> bool {
 /// 2. Pass events to the platform (every frame)
 /// 3. Call frame preparation callback (every frame)
 pub struct SdlPlatform {
+    #[allow(dead_code)]
     cursor_instance: Option<Cursor>, /* to avoid dropping cursor instances */
     last_frame: Instant,
     mouse_buttons: [Button; 5],

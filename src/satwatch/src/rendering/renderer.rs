@@ -3,19 +3,10 @@ use crate::rendering::material::Material;
 use glow::Context;
 use legion::*;
 use std::collections::HashMap;
-use std::hash::Hash;
 
 #[derive(Debug)]
 pub struct Renderer {
     material_store: HashMap<String, Material>,
-}
-
-fn calculate_hash<T: Hash>(t: &T) -> u64 {
-    use std::collections::hash_map::DefaultHasher;
-    use std::hash::{Hash, Hasher};
-    let mut s = DefaultHasher::new();
-    t.hash(&mut s);
-    s.finish()
 }
 
 impl Renderer {
@@ -27,7 +18,7 @@ impl Renderer {
 
     pub fn load(&mut self, gl: &Context, world: &mut World) -> Result<(), String> {
         let mut mat_query =
-            <(&MaterialComponent)>::query().filter(maybe_changed::<MaterialComponent>());
+            <&MaterialComponent>::query().filter(maybe_changed::<MaterialComponent>());
         for mat_component in mat_query.iter(world) {
             if !self.material_store.contains_key(&mat_component.0) {
                 let mat = Material::from_file(gl, &mat_component.0)?;

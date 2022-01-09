@@ -1,6 +1,5 @@
 use crate::components::WorldTransform;
 use glam::f32::*;
-use glam::EulerRot;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Camera {

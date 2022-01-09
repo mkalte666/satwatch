@@ -7,9 +7,9 @@ use crate::util::evil_unsafe::u8_slice_from_any;
 pub struct VertexList {
     draw_type: u32,
     vao: Option<VertexArray>,
-    vbo: Option<Buffer>,
-    indices: Option<Buffer>,
-    normals: Option<Buffer>,
+    _vbo: Option<Buffer>,
+    _indices: Option<Buffer>,
+    _normals: Option<Buffer>,
     element_count: i32,
 }
 
@@ -97,10 +97,10 @@ impl VertexList {
         Ok(Self {
             draw_type,
             vao,
-            vbo,
-            indices,
+            _vbo: vbo,
+            _indices: indices,
             element_count,
-            normals,
+            _normals: normals,
         })
     }
 
@@ -123,7 +123,7 @@ impl VertexList {
     }
 
     pub fn draws_indexed(&self) -> bool {
-        self.indices.is_some()
+        self._indices.is_some()
     }
 
     pub fn bind(&self, gl: &Context) {

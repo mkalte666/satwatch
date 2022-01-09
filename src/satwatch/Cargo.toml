@@ -29,6 +29,9 @@ branch = "main"
 [dependencies.legion]
 version = "0.4.0"
 
+[dependencies.log]
+version = "0.4"
+
 [dependencies.libspace]
 path = "../libspace"
 

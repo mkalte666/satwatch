@@ -1,5 +1,6 @@
 use imgui::*;
 use libspace::element_db::ElementDb;
+use log::error;
 use std::collections::HashSet;
 
 pub struct SelectionChanges {
@@ -18,8 +19,11 @@ pub fn draw_db_ui(db: &mut ElementDb, selected: &mut HashSet<u64>, ui: &Ui) -> S
         .size([300.0, 300.0], Condition::Appearing)
         .build(|| {
             if ui.button("Full update all") {
-                db.fetch_full_celestrak();
-                db.save();
+                if let Err(e) = db.fetch_full_celestrak() {
+                    error!("Something went wrong during update: {}", e);
+                } else {
+                    db.save();
+                }
             }
             if ui.button("YOLO") {
                 for (id, _) in db.all() {

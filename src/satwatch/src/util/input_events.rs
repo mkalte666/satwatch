@@ -1,5 +1,3 @@
-use glam::Vec3;
-
 use sdl2::event::{Event as SdlEvent, WindowEvent};
 use sdl2::keyboard::{Keycode, Mod};
 use sdl2::mouse::MouseState;
@@ -18,16 +16,30 @@ pub enum Event {
 }
 
 fn key_to_ours(keyopt: Option<Keycode>, keymod: Mod, pressed: bool) -> Event {
-    if let Some(key) = keyopt {
-        match key {
-            Keycode::W => Event::MoveForwards(pressed),
-            Keycode::S => Event::MoveBackwards(pressed),
-            Keycode::A => Event::MoveLeft(pressed),
-            Keycode::D => Event::MoveRight(pressed),
-            _ => Event::None,
+    if keymod.contains(Mod::LSHIFTMOD) {
+        if let Some(key) = keyopt {
+            match key {
+                Keycode::W => Event::MoveUp(pressed),
+                Keycode::S => Event::MoveDown(pressed),
+                Keycode::A => Event::MoveLeft(pressed),
+                Keycode::D => Event::MoveRight(pressed),
+                _ => Event::None,
+            }
+        } else {
+            Event::None
         }
     } else {
-        Event::None
+        if let Some(key) = keyopt {
+            match key {
+                Keycode::W => Event::MoveForwards(pressed),
+                Keycode::S => Event::MoveBackwards(pressed),
+                Keycode::A => Event::MoveLeft(pressed),
+                Keycode::D => Event::MoveRight(pressed),
+                _ => Event::None,
+            }
+        } else {
+            Event::None
+        }
     }
 }
 

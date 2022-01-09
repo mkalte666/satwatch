@@ -2,7 +2,7 @@ use crate::components::DirectionalLight;
 use crate::util::asset_file::{asset_file_name, asset_file_str};
 use glam::f32::*;
 use glow::{Context, HasContext, Program, Shader, Texture, UniformLocation};
-use sdl2::pixels::{PixelFormat, PixelFormatEnum};
+use sdl2::pixels::PixelFormatEnum;
 use serde::Deserialize;
 
 #[derive(Debug)]
@@ -20,7 +20,7 @@ pub struct Material {
 
 #[derive(Deserialize, Debug)]
 struct MaterialFile {
-    name: String,
+    _name: String,
     shaders: MaterialFileShaders,
     parameters: Option<MaterialFileParameters>,
 }

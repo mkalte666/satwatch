@@ -3,25 +3,18 @@ mod rendering;
 mod space;
 mod util;
 
-use imgui::Context;
-
 use sdl2::{
     event::Event,
     video::{GLProfile, Window},
-    Sdl,
 };
 
 use imgui_glow_renderer::AutoRenderer;
 
-use crate::rendering::renderer::Renderer;
 use crate::space::world_control::WorldControl;
 use crate::util::input_events::sdl_to_our_event;
 use crate::util::sdl2_imgui_tmpfix::SdlPlatform;
-use crate::util::vertex_tools;
-use glam::f32::*;
 use glow::HasContext;
 use legion::*;
-use sdl2::keyboard::Keycode;
 
 fn glow_context(window: &Window) -> glow::Context {
     unsafe {
@@ -31,7 +24,6 @@ fn glow_context(window: &Window) -> glow::Context {
 
 fn main() -> Result<(), String> {
     let sdl = sdl2::init()?;
-    use sdl2::image::{LoadSurface, Sdl2ImageContext};
     let _image = sdl2::image::init(sdl2::image::InitFlag::all())?;
 
     let video_subsystem = sdl.video()?;
@@ -93,16 +85,19 @@ fn main() -> Result<(), String> {
         }
 
         // world tick here
-        world_control.tick(imgui_renderer.gl_context(), &mut world);
+        if let Err(e) = world_control.tick(imgui_renderer.gl_context(), &mut world) {
+            log::warn!("Issues during world tick: {}", e);
+        }
 
         if let Err(e) = render_system.load(imgui_renderer.gl_context(), &mut world) {
-            eprintln!("{}", e);
+            log::error!("Issues during render: {}", e);
         }
         platform.prepare_frame(&mut imgui, &window, &event_pump);
         let mut ui = imgui.frame();
 
-        use imgui::*;
-        world_control.ui(imgui_renderer.gl_context(), &mut world, &mut ui);
+        if let Err(e) = world_control.ui(imgui_renderer.gl_context(), &mut world, &mut ui) {
+            log::warn!("Issues during ui draw: {}", e);
+        }
 
         let draw_data = imgui.render();
 
