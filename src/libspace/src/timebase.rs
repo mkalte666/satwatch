@@ -20,17 +20,34 @@ impl Timebase {
         }
     }
 
+    pub fn j2000_epoch() -> DateTime<Utc> {
+        let epoch: DateTime<Utc> = chrono::Utc.ymd(2000, 1, 1).and_hms(12, 0, 0);
+        epoch
+    }
+
     pub fn now(&self) -> DateTime<Utc> {
         self.now
     }
 
-    pub fn now_minutes(&self, epoch: chrono::DateTime<Utc>) -> f64 {
-        self.now.signed_duration_since(epoch).num_milliseconds() as f64 / 60000.0
+    pub fn now_julian_since_j2000(&self) -> f64 {
+        self.duration_since(Self::j2000_epoch()).num_milliseconds() as f64
+            / (1000.0 * 60.0 * 60.0 * 24.0)
     }
 
-    pub fn now_j2000_minutes(&self) -> f64 {
-        let epoch = chrono::Utc.ymd(2000, 1, 1).and_hms(12, 0, 0);
-        self.now_minutes(epoch)
+    pub fn now_julian(&self) -> f64 {
+        self.now_julian_since_j2000() + 2451545.0
+    }
+
+    pub fn duration_since(&self, epoch: chrono::DateTime<Utc>) -> chrono::Duration {
+        self.now.signed_duration_since(epoch)
+    }
+
+    pub fn duration_since_minutes(&self, epoch: chrono::DateTime<Utc>) -> f64 {
+        self.duration_since(epoch).num_milliseconds() as f64 / 60000.0
+    }
+
+    pub fn now_since_j2000_minutes(&self) -> f64 {
+        self.duration_since_minutes(Self::j2000_epoch())
     }
 
     pub fn tick(&mut self, interval: Duration) {

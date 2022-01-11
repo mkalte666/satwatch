@@ -175,11 +175,11 @@ impl WorkerData {
         let start = Instant::now();
         for (id, element) in &self.elements {
             let tle_epoch: DateTime<Utc> = DateTime::from_utc(element.datetime, Utc);
-            let minutes = self.timebase.now_minutes(tle_epoch);
+            let minutes = self.timebase.duration_since_minutes(tle_epoch);
             if let Ok(constants) = sgp4::Constants::from_elements(element) {
                 if let Ok(prediction) = constants.propagate(minutes) {
                     let mut state = StateVector::from(prediction);
-                    state.coordinate.time = self.timebase.now_j2000_minutes();
+                    state.coordinate.time = self.timebase.now_since_j2000_minutes();
                     //let mut orb_points : Vec<Coordinate> = Vec::new();
                     // miuntes/orbit = 1/(orbits/day)/24/60
                     /*let min_per_orbit = 1.0/element.mean_motion * 24.0 * 60.0;

@@ -161,7 +161,7 @@ impl WorldControl {
         // so manual :/
         let mut cam_query = <(&mut Coordinate, &mut WorldTransform, &Camera)>::query();
         for (coord, transform, _cam) in cam_query.iter_mut(world) {
-            coord.time = self.timebase.now_j2000_minutes();
+            coord.time = self.timebase.now_since_j2000_minutes();
             let mut gl_coord: Coordinate = coord.transform(CoordinateSystem::OpenGl);
 
             let rot_gl =
@@ -186,7 +186,7 @@ impl WorldControl {
         if let Some(entity) = self.earth {
             if let Ok(mut entry) = world.entry_mut(entity) {
                 if let Ok(coord) = entry.get_component_mut::<Coordinate>() {
-                    coord.time = self.timebase.now_j2000_minutes();
+                    coord.time = self.timebase.now_since_j2000_minutes();
                 }
             }
         }
