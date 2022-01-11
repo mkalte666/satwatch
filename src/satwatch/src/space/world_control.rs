@@ -214,7 +214,7 @@ impl WorldControl {
         use crate::components::*;
         use crate::util::vertex_tools::*;
         // in this coordinate system we draw world_scale from earth
-        let body = libspace::planets::earth::Earth::body();
+        let body = libspace::bodies::planets::earth::Earth::body();
         self.world_scale = body.radius_mean;
         self.gl_origin = Coordinate::new(CoordinateSystem::EarthCenteredInertial, [0.0, 0.0, 0.0]);
         // camera in front, sun from the right (inaccurate but for now? whatever)
