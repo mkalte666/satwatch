@@ -1,2 +1,4 @@
-pub mod earth;
-pub use earth::*;
+mod earth;
+pub mod planet;
+
+pub use planet::*;

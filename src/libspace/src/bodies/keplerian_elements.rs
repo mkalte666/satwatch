@@ -1,6 +1,8 @@
 // straight forwawrd implementation of https://ssd.jpl.nasa.gov/planets/approx_pos.html
 // Archive version: https://web.archive.org/web/20211128162928/https://ssd.jpl.nasa.gov/planets/approx_pos.html
 
+use crate::timebase::Timebase;
+
 pub struct KeplerianElements {
     /// au
     pub semi_mayor_0: f64,
@@ -40,10 +42,6 @@ const KEPLER_TOLERANCE: f64 = 1e-6;
 const KEPLER_MAX_STEPS: usize = 1024;
 
 impl KeplerianElements {
-    pub fn position_ecliptic(&self, time: f64) -> [f64; 3] {
-        self.position_ecliptic_since_j2000(time - 2451545.0)
-    }
-
     pub fn position_ecliptic_since_j2000(&self, time: f64) -> [f64; 3] {
         let t = time / 36525.0;
 
@@ -83,8 +81,9 @@ impl KeplerianElements {
         [x_ecl, y_ecl, z_ecl]
     }
 
-    pub fn position_icrf(&self, time: f64) -> [f64; 3] {
-        self.position_icrf_since_j2000(time - 2451545.0)
+    pub fn position_ecliptic(&self, timebase: &Timebase) -> [f64; 3] {
+        let time = timebase.now_julian_since_j2000();
+        self.position_ecliptic_since_j2000(time)
     }
 
     pub fn position_icrf_since_j2000(&self, time: f64) -> [f64; 3] {
@@ -97,6 +96,11 @@ impl KeplerianElements {
         let y_eq = cos_e * y_ecl - sin_e * z_ecl;
         let z_eq = sin_e * y_ecl + cos_e * z_ecl;
         [x_eq, y_eq, z_eq]
+    }
+
+    pub fn position_icrf(&self, timebase: &Timebase) -> [f64; 3] {
+        let time = timebase.now_julian_since_j2000();
+        self.position_icrf_since_j2000(time)
     }
 
     fn solve_keplers_equation(&self, mean_anomaly: f64) -> f64 {
