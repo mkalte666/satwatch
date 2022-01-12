@@ -20,6 +20,9 @@ version = "0.4"
 [dependencies.num]
 version = "0.4.0"
 
+[dependencies.rust-spice]
+version = "0.7.1"
+
 [dependencies.serde]
 version = "1"
 
@@ -32,3 +35,9 @@ version = "^0.5"
 [dependencies.ureq]
 version = "2.4.0"
 features = ["default","json"]
+
+[build-dependencies]
+cc = "1.0.72"
+sha2 = "0.10.1"
+ureq = "2.4.0"
+tar = "0.4.38"
