@@ -1,5 +1,6 @@
 use glam::f32::*;
-use libspace::coordinates::{Coordinate, CoordinateSystem};
+use libspace::coordinate::{CoordinateUnit, IcrfStateVector, PlanetaryStateVector};
+use libspace::timebase::Timebase;
 
 #[derive(Debug, Copy, Clone)]
 pub struct WorldTransform {
@@ -23,24 +24,28 @@ impl WorldTransform {
         return Mat4::from_scale_rotation_translation(self.scale, self.rotation, self.translation);
     }
 
-    pub fn from_coordinate(
-        coordinate: &Coordinate,
-        gl_origin: &Coordinate,
+    pub fn from_icrf(
+        coordinate: &IcrfStateVector,
+        gl_origin: &IcrfStateVector,
         world_scale: f64,
+        scale_unit: CoordinateUnit,
     ) -> Self {
         let mut result = Self::default();
 
-        let a = coordinate.transform(CoordinateSystem::OpenGl);
-        let b = gl_origin.transform(CoordinateSystem::OpenGl);
-        result.translation = Vec3::new(
-            ((a.position[0] - b.position[0]) / world_scale) as f32,
-            ((a.position[1] - b.position[1]) / world_scale) as f32,
-            ((a.position[2] - b.position[2]) / world_scale) as f32,
-        );
+        let p = coordinate.to_gl_coord(world_scale, scale_unit, gl_origin);
 
-        result.rotation = Quat::from_rotation_y(a.accumulated_rotations[1] as f32)
-            * Quat::from_rotation_x(a.accumulated_rotations[0] as f32)
-            * Quat::from_rotation_z(a.accumulated_rotations[2] as f32);
+        result.translation = Vec3::new(p.x as f32, p.y as f32, p.z as f32);
         result
+    }
+
+    pub fn from_planet_vec(
+        coordinate: &PlanetaryStateVector,
+        gl_origin: &IcrfStateVector,
+        world_scale: f64,
+        scale_unit: CoordinateUnit,
+        time: &Timebase,
+    ) -> Self {
+        let icrf_pos = coordinate.to_icrf(time);
+        Self::from_icrf(&icrf_pos, gl_origin, world_scale, scale_unit)
     }
 }

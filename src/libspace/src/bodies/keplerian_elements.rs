@@ -1,6 +1,7 @@
 // straight forwawrd implementation of https://ssd.jpl.nasa.gov/planets/approx_pos.html
 // Archive version: https://web.archive.org/web/20211128162928/https://ssd.jpl.nasa.gov/planets/approx_pos.html
 
+use crate::coordinate::*;
 use crate::timebase::Timebase;
 
 pub struct KeplerianElements {
@@ -86,7 +87,7 @@ impl KeplerianElements {
         self.position_ecliptic_since_j2000(time)
     }
 
-    pub fn position_icrf_since_j2000(&self, time: f64) -> [f64; 3] {
+    pub fn position_icrf_since_j2000(&self, time: f64) -> IcrfStateVector {
         let epsilon = 23.43928f64.to_radians();
         let cos_e = epsilon.cos();
         let sin_e = epsilon.sin();
@@ -95,10 +96,14 @@ impl KeplerianElements {
         let x_eq = x_ecl;
         let y_eq = cos_e * y_ecl - sin_e * z_ecl;
         let z_eq = sin_e * y_ecl + cos_e * z_ecl;
-        [x_eq, y_eq, z_eq]
+        IcrfStateVector {
+            unit: CoordinateUnit::Au,
+            position: DVec3::new(x_eq, y_eq, z_eq),
+            velocity: DVec3::new(0.0, 0.0, 0.0),
+        }
     }
 
-    pub fn position_icrf(&self, timebase: &Timebase) -> [f64; 3] {
+    pub fn position_icrf(&self, timebase: &Timebase) -> IcrfStateVector {
         let time = timebase.now_julian_since_j2000();
         self.position_icrf_since_j2000(time)
     }

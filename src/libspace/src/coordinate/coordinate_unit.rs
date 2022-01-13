@@ -26,7 +26,7 @@ impl CoordinateUnit {
     pub fn factor_to(&self, other: Self) -> f64 {
         let mine = self.factor_from_base();
         let other = other.factor_from_base();
-        other / mine
+        mine / other
     }
 
     pub fn to<T>(&self, other: Self, value: &T) -> T

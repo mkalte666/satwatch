@@ -2,12 +2,13 @@ use imgui::*;
 use legion::*;
 
 use crate::components::{Camera, MaterialComponent, VertexList, WorldTransform};
-use crate::space::dbui::SelectionChanges;
 use crate::util::input_events::Event;
 use crate::util::vertex_tools::*;
+use crate::world::element_db_ui::SelectionChanges;
 use glam::{Quat, Vec3, Vec4};
-use libspace::coordinates::Coordinate;
-use libspace::coordinates::*;
+use libspace::bodies::Planet;
+use libspace::coordinate::PlanetaryStateVector;
+use libspace::coordinate::*;
 use libspace::element_db::ElementDb;
 use libspace::element_engine::{ElementEngine, ElementUpdate};
 use libspace::timebase::Timebase;
@@ -15,10 +16,9 @@ use std::collections::{HashMap, HashSet};
 use std::time::{Duration, Instant};
 
 pub struct WorldControl {
+    was_init: bool,
     last_tick: Instant,
-    view_coordinate_system: CoordinateSystem,
-    new_view_coordinate_system: CoordinateSystem,
-    gl_origin: Coordinate,
+    gl_origin: IcrfStateVector,
     world_scale: f64,
     element_db: ElementDb,
     camera_velocity: Vec3,
@@ -38,10 +38,13 @@ struct ElementEntity {
 impl WorldControl {
     pub fn new() -> Self {
         Self {
+            was_init: false,
             last_tick: Instant::now(),
-            view_coordinate_system: CoordinateSystem::Invalid,
-            new_view_coordinate_system: CoordinateSystem::EarthCenteredInertial,
-            gl_origin: Coordinate::new(CoordinateSystem::EarthCenteredInertial, [0.0, 0.0, 0.0]),
+            gl_origin: IcrfStateVector {
+                unit: CoordinateUnit::Meter,
+                position: DVec3::new(0.0, 0.0, 0.0),
+                velocity: DVec3::new(0.0, 0.0, 0.0),
+            },
             world_scale: 1.0,
             element_db: ElementDb::new(),
             camera_velocity: Vec3::new(0.0, 0.0, 0.0),
@@ -55,26 +58,15 @@ impl WorldControl {
     }
 
     pub fn ui(&mut self, gl: &glow::Context, world: &mut World, ui: &mut Ui) -> Result<(), String> {
-        ui.window("view").save_settings(false).build(|| {
-            ui.text("Select Reference Frame");
-            ui.radio_button(
-                CoordinateSystem::EarthCenteredInertial.to_string(),
-                &mut self.new_view_coordinate_system,
-                CoordinateSystem::EarthCenteredInertial,
-            );
-            ui.radio_button(
-                CoordinateSystem::EarthCenteredEarthFixed.to_string(),
-                &mut self.new_view_coordinate_system,
-                CoordinateSystem::EarthCenteredEarthFixed,
-            );
-            if ui.button("Reset View") {
-                self.new_view_coordinate_system = self.view_coordinate_system;
-                self.view_coordinate_system = CoordinateSystem::Invalid;
-            }
-        });
+        ui.window("view")
+            .save_settings(false)
+            .build(|| if ui.button("Reset View") {});
 
-        let changed =
-            crate::space::dbui::draw_db_ui(&mut self.element_db, &mut self.selected_sats, &ui);
+        let changed = crate::world::element_db_ui::draw_db_ui(
+            &mut self.element_db,
+            &mut self.selected_sats,
+            &ui,
+        );
         self.handle_element_changes(gl, world, &changed);
 
         ui.window("Time").save_settings(false).build(|| {
@@ -142,72 +134,88 @@ impl WorldControl {
         }
         self.last_tick = Instant::now();
         self.timebase.tick(tick_duration);
+
+        if !self.was_init {
+            self.generate_eci(gl, world).unwrap();
+            self.was_init = true;
+        }
+
         self.elements_engine.update_timebase(self.timebase.clone());
         while let Some(e) = self.elements_engine.get_more() {
             self.handle_element_update(gl, world, e);
         }
 
-        // if we changed our view system we throw away everything in the world and redo
-        if self.new_view_coordinate_system != self.view_coordinate_system {
-            world.clear();
-            self.sat_entities.clear();
-            self.selected_sats.clear();
-            self.view_coordinate_system = self.new_view_coordinate_system;
-            self.regenerate_world(gl, world)?;
-        }
+        // earth moves
+        self.gl_origin = Planet::Earth
+            .orbit()
+            .elements_short
+            .position_icrf(&self.timebase);
 
         // camera moves
         // movement is in viewspace, and we dont have a coordinate system for that yet
         // so manual :/
-        let mut cam_query = <(&mut Coordinate, &mut WorldTransform, &Camera)>::query();
+        let mut cam_query = <(&mut PlanetaryStateVector, &mut WorldTransform, &Camera)>::query();
         for (coord, transform, _cam) in cam_query.iter_mut(world) {
-            coord.time = self.timebase.now_since_j2000_minutes();
-            let mut gl_coord: Coordinate = coord.transform(CoordinateSystem::OpenGl);
+            let icrf_coord: IcrfStateVector = coord.to_icrf(&self.timebase);
+            let mut gl_coord: DVec3 = icrf_coord.to_gl_coord(
+                self.world_scale,
+                CoordinateUnit::KiloMeter,
+                &self.gl_origin,
+            );
 
-            let rot_gl =
-                Quat::from_rotation_y(self.camera_rot.y + gl_coord.accumulated_rotations[1] as f32)
-                    * Quat::from_rotation_x(
-                        self.camera_rot.x + gl_coord.accumulated_rotations[0] as f32,
-                    )
-                    * Quat::from_rotation_z(
-                        self.camera_rot.z + gl_coord.accumulated_rotations[2] as f32,
-                    );
+            let rot_gl = Quat::from_rotation_y(self.camera_rot.y)
+                * Quat::from_rotation_x(self.camera_rot.x)
+                * Quat::from_rotation_z(self.camera_rot.z);
 
             let rot_movement = rot_gl.mul_vec3(self.camera_velocity);
-            gl_coord.position[0] += rot_movement.x as f64 * self.world_scale * tick_velo_step;
-            gl_coord.position[1] += rot_movement.y as f64 * self.world_scale * tick_velo_step;
-            gl_coord.position[2] += rot_movement.z as f64 * self.world_scale * tick_velo_step;
+            gl_coord.x += rot_movement.x as f64 * tick_velo_step;
+            gl_coord.y += rot_movement.y as f64 * tick_velo_step;
+            gl_coord.z += rot_movement.z as f64 * tick_velo_step;
 
-            *coord = gl_coord.transform(coord.system);
-            *transform = WorldTransform::from_coordinate(coord, &self.gl_origin, self.world_scale);
+            let new_icrf = IcrfStateVector::from_gl_coord(
+                &gl_coord,
+                self.world_scale,
+                CoordinateUnit::KiloMeter,
+                &self.gl_origin,
+            );
+            *coord = PlanetaryStateVector::from_icrf(new_icrf, &self.timebase, Planet::Earth);
+            *transform = WorldTransform::from_icrf(
+                &new_icrf,
+                &self.gl_origin,
+                self.world_scale,
+                CoordinateUnit::KiloMeter,
+            );
             transform.rotation = rot_gl;
-        }
-
-        if let Some(entity) = self.earth {
-            if let Ok(mut entry) = world.entry_mut(entity) {
-                if let Ok(coord) = entry.get_component_mut::<Coordinate>() {
-                    coord.time = self.timebase.now_since_j2000_minutes();
-                }
-            }
         }
 
         // update all object positions
         let mut position_query =
-            <(&mut WorldTransform, &Coordinate)>::query().filter(!component::<Camera>());
+            <(&mut WorldTransform, &PlanetaryStateVector)>::query().filter(!component::<Camera>());
         for (transform, coordinate) in position_query.iter_mut(world) {
-            *transform =
-                WorldTransform::from_coordinate(&coordinate, &self.gl_origin, self.world_scale);
+            *transform = WorldTransform::from_planet_vec(
+                &coordinate,
+                &self.gl_origin,
+                self.world_scale,
+                CoordinateUnit::KiloMeter,
+                &self.timebase,
+            );
+        }
+        let mut position_query =
+            <(&mut WorldTransform, &IcrfStateVector)>::query().filter(!component::<Camera>());
+        for (transform, coordinate) in position_query.iter_mut(world) {
+            *transform = WorldTransform::from_icrf(
+                &coordinate,
+                &self.gl_origin,
+                self.world_scale,
+                CoordinateUnit::KiloMeter,
+            );
         }
         Ok(())
     }
 
     fn regenerate_world(&mut self, gl: &glow::Context, world: &mut World) -> Result<(), String> {
-        match self.view_coordinate_system {
-            CoordinateSystem::Invalid => Ok(()),
-            CoordinateSystem::EarthCenteredInertial => self.generate_eci(gl, world),
-            CoordinateSystem::EarthCenteredEarthFixed => self.generate_ecef(gl, world),
-            _ => Ok(()),
-        }
+        world.clear();
+        self.generate_eci(gl, world)
     }
 
     fn generate_eci(&mut self, gl: &glow::Context, world: &mut World) -> Result<(), String> {
@@ -216,12 +224,18 @@ impl WorldControl {
         // in this coordinate system we draw world_scale from earth
         let body = libspace::bodies::Planet::Earth.body();
         self.world_scale = body.radius_mean;
-        self.gl_origin = Coordinate::new(CoordinateSystem::EarthCenteredInertial, [0.0, 0.0, 0.0]);
+        self.gl_origin = Planet::Earth
+            .orbit()
+            .elements_short
+            .position_icrf(&self.timebase);
         // camera in front, sun from the right (inaccurate but for now? whatever)
-        let camera_pos = Coordinate::new(
-            CoordinateSystem::EarthCenteredInertial,
-            [body.radius_mean * 3.0, 0.0, 0.0],
-        );
+        let camera_pos = PlanetaryStateVector {
+            planet: Planet::Earth,
+            reference_frame: PlanetaryReferenceFrame::Inertial,
+            unit: CoordinateUnit::KiloMeter,
+            position: DVec3::new(self.world_scale * 3.0, 0.0, 0.0),
+            velocity: DVec3::new(0.0, 0.0, 0.0),
+        };
         // and planet wherever.
         // we also do not care about the transforms, as they are rebuilt anyway
         world.push((
@@ -238,7 +252,13 @@ impl WorldControl {
         let (planet_vertices, planet_indices, planet_normals) = gen_icosphere(1.0, 4);
         self.earth = Some(world.push((
             WorldTransform::default(),
-            Coordinate::new(CoordinateSystem::EarthCenteredEarthFixed, [0.0, 0.0, 0.0]),
+            PlanetaryStateVector {
+                planet: Planet::Earth,
+                reference_frame: PlanetaryReferenceFrame::Inertial,
+                unit: CoordinateUnit::Meter,
+                position: DVec3::new(0.0, 0.0, 0.0),
+                velocity: DVec3::new(0.0, 0.0, 0.0),
+            },
             VertexList::create_triangles(
                 gl,
                 &planet_vertices,
@@ -253,12 +273,6 @@ impl WorldControl {
 
     fn generate_ecef(&mut self, gl: &glow::Context, world: &mut World) -> Result<(), String> {
         let res = self.generate_eci(gl, world);
-        if res.is_ok() {
-            let mut cam_query = <(&mut Coordinate, &WorldTransform, &Camera)>::query();
-            for (coord, _transform, _cam) in cam_query.iter_mut(world) {
-                coord.system = CoordinateSystem::EarthCenteredEarthFixed;
-            }
-        }
         res
     }
 
@@ -274,7 +288,13 @@ impl WorldControl {
                 self.elements_engine.add(element);
                 let entity = world.push((
                     WorldTransform::default(),
-                    Coordinate::invalid(),
+                    PlanetaryStateVector {
+                        planet: Planet::Earth,
+                        reference_frame: PlanetaryReferenceFrame::Inertial,
+                        unit: CoordinateUnit::Meter,
+                        position: Default::default(),
+                        velocity: Default::default(),
+                    },
                     VertexList::create_triangles(
                         gl,
                         &sat_vertices,
@@ -307,11 +327,12 @@ impl WorldControl {
     }
 
     fn make_orbit_vertex_list(
-        world_scale: f64,
         gl: &glow::Context,
-        points: Vec<Coordinate>,
+        world_scale: f64,
+        points: Vec<PlanetaryStateVector>,
+        time: &Timebase,
     ) -> Result<VertexList, String> {
-        let (vert, ind) = gen_orbit_points(points, world_scale);
+        let (vert, ind) = gen_orbit_points(points, world_scale, time);
 
         VertexList::create_lines(gl, &vert, Some(&ind), None)
     }
@@ -319,8 +340,8 @@ impl WorldControl {
     fn handle_element_update(&mut self, gl: &glow::Context, world: &mut World, up: ElementUpdate) {
         if let Some(e) = self.sat_entities.get_mut(&up.id) {
             if let Ok(mut entry) = world.entry_mut(e.entity) {
-                if let Ok(pos) = entry.get_component_mut::<Coordinate>() {
-                    *pos = up.state.coordinate;
+                if let Ok(pos) = entry.get_component_mut::<PlanetaryStateVector>() {
+                    *pos = up.state;
                 }
             }
 
@@ -328,23 +349,32 @@ impl WorldControl {
                 if let Some(entity) = &e.orbit {
                     if let Ok(mut entry) = world.entry_mut(*entity) {
                         if let Ok(vlist) = entry.get_component_mut::<VertexList>() {
-                            if let Ok(new_vlist) =
-                                Self::make_orbit_vertex_list(self.world_scale, gl, new_points)
-                            {
+                            if let Ok(new_vlist) = Self::make_orbit_vertex_list(
+                                gl,
+                                self.world_scale,
+                                new_points,
+                                &self.timebase,
+                            ) {
                                 *vlist = new_vlist;
                             }
                         }
                     }
                 } else {
-                    if let Ok(new_vlist) =
-                        Self::make_orbit_vertex_list(self.world_scale, gl, new_points)
-                    {
+                    if let Ok(new_vlist) = Self::make_orbit_vertex_list(
+                        gl,
+                        self.world_scale,
+                        new_points,
+                        &self.timebase,
+                    ) {
                         e.orbit = Some(world.push((
                             WorldTransform::default(),
-                            Coordinate::new(
-                                CoordinateSystem::EarthCenteredInertial,
-                                [0.0, 0.0, 0.0],
-                            ),
+                            PlanetaryStateVector {
+                                planet: Planet::Earth,
+                                reference_frame: PlanetaryReferenceFrame::Inertial,
+                                unit: CoordinateUnit::Meter,
+                                position: Default::default(),
+                                velocity: Default::default(),
+                            },
                             new_vlist,
                             MaterialComponent("material/colored_orbit.toml".to_string()),
                         )));

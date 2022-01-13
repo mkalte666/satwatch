@@ -1,7 +1,7 @@
 mod components;
 mod rendering;
-mod space;
 mod util;
+mod world;
 
 use sdl2::{
     event::Event,
@@ -10,10 +10,10 @@ use sdl2::{
 
 use imgui_glow_renderer::AutoRenderer;
 
-use crate::space::world_control::WorldControl;
 use crate::util::imgui_logger::*;
 use crate::util::input_events::sdl_to_our_event;
 use crate::util::sdl2_imgui_tmpfix::SdlPlatform;
+use crate::world::world_control::WorldControl;
 use glow::HasContext;
 use legion::*;
 

@@ -1,21 +1,29 @@
 use glam::f32::*;
 
-use libspace::coordinates::{Coordinate, CoordinateSystem};
-pub fn gen_orbit_points(points: Vec<Coordinate>, world_scale: f64) -> (Vec<Vec3>, Vec<u32>) {
+use libspace::bodies::Planet;
+use libspace::coordinate::*;
+use libspace::timebase::Timebase;
+
+pub fn gen_orbit_points(
+    points: Vec<PlanetaryStateVector>,
+    world_scale: f64,
+    time: &Timebase,
+) -> (Vec<Vec3>, Vec<u32>) {
     let mut results = Vec::new();
     //01,12,23,...,n0
     let mut indices = Vec::new();
 
     let elements = points.len() as u32;
     for i in 0..elements {
-        let gl_coord: Coordinate = points
-            .get(i as usize)
-            .unwrap()
-            .transform(CoordinateSystem::OpenGl);
+        let gl_coord: DVec3 = points.get(i as usize).unwrap().to_icrf(time).to_gl_coord(
+            world_scale,
+            CoordinateUnit::KiloMeter,
+            &Planet::Earth.orbit().elements_short.position_icrf(time),
+        );
         results.push(Vec3::new(
-            (gl_coord.position[0] / world_scale) as f32,
-            (gl_coord.position[1] / world_scale) as f32,
-            (gl_coord.position[2] / world_scale) as f32,
+            (gl_coord.x) as f32,
+            (gl_coord.y) as f32,
+            (gl_coord.x) as f32,
         ));
         if i + 1 < elements {
             indices.push(i);

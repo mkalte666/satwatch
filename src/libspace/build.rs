@@ -96,12 +96,12 @@ fn build_cspice() {
     }
 
     print!(
-        "cargo:rustc-link-search={}",
+        "cargo:rustc-link-search=[{}]",
         name_cspice_dir.join("lib").to_str().unwrap()
     );
-    print!("cargo:rustc-link-lib=cspice");
+    print!("cargo:rustc-link-lib=[cspice]");
     print!(
-        "cargo:rustc-cdylib-link-arg=-I{}",
+        "cargo:rustc-cdylib-link-arg=[-I{}]",
         name_cspice_dir.join("lib").to_str().unwrap()
     );
 }
