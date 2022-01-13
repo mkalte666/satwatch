@@ -14,6 +14,7 @@ use crate::util::imgui_logger::*;
 use crate::util::input_events::sdl_to_our_event;
 use crate::util::sdl2_imgui_tmpfix::SdlPlatform;
 use crate::world::world_control::WorldControl;
+use crate::world::world_ui::WorldUi;
 use glow::HasContext;
 use legion::*;
 
@@ -68,7 +69,7 @@ fn main() -> Result<(), String> {
 
     let mut world = World::default();
     let mut render_system = crate::rendering::renderer::Renderer::create();
-    let mut world_control = WorldControl::new();
+    let mut world_control = WorldControl::new(imgui_renderer.gl_context(), &mut world)?;
 
     'main_loop: loop {
         for event in event_pump.poll_iter() {
@@ -89,7 +90,7 @@ fn main() -> Result<(), String> {
         }
 
         // world tick here
-        if let Err(e) = world_control.tick(imgui_renderer.gl_context(), &mut world) {
+        if let Err(e) = world_control.global_tick(imgui_renderer.gl_context(), &mut world) {
             log::warn!("Issues during world tick: {}", e);
         }
 
@@ -98,7 +99,13 @@ fn main() -> Result<(), String> {
         }
         platform.prepare_frame(&mut imgui, &window, &event_pump);
         let mut ui = imgui.frame();
+
+        ui.main_menu_bar(|| {
+            imgui_logger.main_menu(&ui);
+            world_control.main_menu(&ui);
+        });
         imgui_logger.draw(&mut ui);
+
         if let Err(e) = world_control.ui(imgui_renderer.gl_context(), &mut world, &mut ui) {
             log::warn!("Issues during ui draw: {}", e);
         }

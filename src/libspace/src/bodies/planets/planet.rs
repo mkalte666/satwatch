@@ -3,7 +3,7 @@ use crate::bodies::planets::earth;
 use crate::timebase::Timebase;
 use std::fmt::{Display, Formatter};
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum Planet {
     Mercury,
     Venus,

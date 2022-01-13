@@ -21,6 +21,7 @@ pub struct ImguiLoggerUi {
     message_rx: Receiver<(Level, String)>,
     messages: VecDeque<(Level, String)>,
     max_count: usize,
+    visible: bool,
 }
 
 impl ImguiLoggerUi {
@@ -38,8 +39,18 @@ impl ImguiLoggerUi {
             message_rx,
             messages: VecDeque::new(),
             max_count: 1000,
+            visible: false,
         }
     }
+
+    pub fn main_menu(&mut self, ui: &Ui) {
+        ui.menu("Help", || {
+            if ui.menu_item("Logs") {
+                self.visible = true;
+            }
+        });
+    }
+
     pub fn draw(&mut self, ui: &mut Ui) {
         // collect and trunkate messages
         'collect_loop: loop {
@@ -55,16 +66,21 @@ impl ImguiLoggerUi {
             self.messages.drain(0..to_drain);
         }
 
-        ui.window("Log")
-            .save_settings(false)
-            .size_constraints([150.0, 300.0], [150000.0, 300000.0])
-            .build(|| {
-                for (level, msg) in &self.messages {
-                    let _stack_token = ui
-                        .push_style_color(StyleColor::Text, level_to_color(*level).to_rgba_f32s());
-                    ui.text(msg);
-                }
-            });
+        if self.visible {
+            ui.window("Log")
+                .opened(&mut self.visible)
+                .save_settings(false)
+                .size_constraints([150.0, 300.0], [150000.0, 300000.0])
+                .build(|| {
+                    for (level, msg) in &self.messages {
+                        let _stack_token = ui.push_style_color(
+                            StyleColor::Text,
+                            level_to_color(*level).to_rgba_f32s(),
+                        );
+                        ui.text(msg);
+                    }
+                });
+        }
     }
 }
 
