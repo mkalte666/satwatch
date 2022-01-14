@@ -29,8 +29,13 @@ impl WorldTransform {
         gl_origin: &IcrfStateVector,
         world_scale: f64,
         scale_unit: CoordinateUnit,
+        old: Option<Self>,
     ) -> Self {
-        let mut result = Self::default();
+        let mut result = if old.is_some() {
+            old.unwrap()
+        } else {
+            Self::default()
+        };
 
         let p = coordinate.to_gl_coord(world_scale, scale_unit, gl_origin);
 
@@ -44,8 +49,9 @@ impl WorldTransform {
         world_scale: f64,
         scale_unit: CoordinateUnit,
         time: &Timebase,
+        old: Option<Self>,
     ) -> Self {
         let icrf_pos = coordinate.to_icrf(time);
-        Self::from_icrf(&icrf_pos, gl_origin, world_scale, scale_unit)
+        Self::from_icrf(&icrf_pos, gl_origin, world_scale, scale_unit, old)
     }
 }

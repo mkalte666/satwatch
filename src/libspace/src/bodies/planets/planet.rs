@@ -1,6 +1,7 @@
 use crate::bodies::body::{Body, Orbit};
 use crate::bodies::planets::earth;
 use crate::timebase::Timebase;
+use glam::Quat;
 use std::fmt::{Display, Formatter};
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
@@ -98,6 +99,19 @@ impl Planet {
             Planet::Neptune => {
                 todo!()
             }
+        }
+    }
+
+    pub fn gl_rotation_at(&self, timebase: &Timebase) -> Quat {
+        match self {
+            Planet::Mercury => Quat::default(),
+            Planet::Venus => Quat::default(),
+            Planet::Earth => Quat::from_rotation_y(self.angle_at(timebase) as f32),
+            Planet::Mars => Quat::default(),
+            Planet::Jupiter => Quat::default(),
+            Planet::Saturn => Quat::default(),
+            Planet::Uranus => Quat::default(),
+            Planet::Neptune => Quat::default(),
         }
     }
 }

@@ -1,20 +1,10 @@
 use imgui::*;
 use legion::*;
 
-use crate::components::{Camera, MaterialComponent, VertexList, WorldTransform};
 use crate::util::input_events::Event;
-use crate::util::vertex_tools::*;
-use crate::world::element_db_ui::SelectionChanges;
 use crate::world::view_ui::ViewUi;
 use crate::world::world_ui::WorldUi;
-use glam::{Quat, Vec3, Vec4};
-use libspace::bodies::Planet;
-use libspace::coordinate::PlanetaryStateVector;
-use libspace::coordinate::*;
-use libspace::element_db::ElementDb;
-use libspace::element_engine::{ElementEngine, ElementUpdate};
 use libspace::timebase::Timebase;
-use std::collections::{HashMap, HashSet};
 use std::time::{Duration, Instant};
 
 pub struct WorldControl {
