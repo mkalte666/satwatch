@@ -4,6 +4,10 @@ version = "0.1.0"
 edition = "2021"
 authors = ["Malte Kießling"]
 
+[features]
+default = []
+trace_logging = ["log/max_level_trace", "log/release_max_level_trace"]
+
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [dependencies.chrono]
 version = "0.4"

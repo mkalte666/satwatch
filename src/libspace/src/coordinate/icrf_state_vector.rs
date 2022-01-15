@@ -45,7 +45,7 @@ impl Display for IcrfStateVector {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "[x,y,z][vx,vy,vz] ICRF: [{},{},{}][{},{},{}]",
+            "[x,y,z][vx,vy,vz] ICRF: [{:+e},{:+e},{:+e}][{:+e},{:+e},{:+e}]",
             self.position.x,
             self.position.y,
             self.position.z,

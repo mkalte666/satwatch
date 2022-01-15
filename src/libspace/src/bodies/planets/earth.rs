@@ -1,5 +1,6 @@
-use crate::bodies::body::{Body, Orbit};
+use crate::bodies::body::Body;
 use crate::bodies::keplerian_elements::KeplerianElements;
+use crate::bodies::orbit::Orbit;
 
 pub const EARTH_BODY: Body = Body {
     radius_mean: 6371.0,
@@ -7,6 +8,7 @@ pub const EARTH_BODY: Body = Body {
     radius_polar: 6356.752,
     mass: 5.97237e24,
     angular_speed_per_second: 7.2921150e-5,
+    sidereal_period: 365.256,
 };
 
 const EARTH_KEPLER_SHORT: KeplerianElements = KeplerianElements {

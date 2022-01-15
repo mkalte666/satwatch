@@ -62,35 +62,21 @@ impl PlanetaryStateVector {
 
     pub fn to_icrf(&self, time: &Timebase) -> IcrfStateVector {
         let as_inertial = self.transform_reference(PlanetaryReferenceFrame::Inertial, time);
-        match as_inertial.planet {
-            Planet::Mercury => {
-                todo!()
+
+        if self.planet == Planet::Sun {
+            IcrfStateVector {
+                unit: self.unit,
+                position: as_inertial.position,
+                velocity: as_inertial.velocity,
             }
-            Planet::Venus => {
-                todo!()
-            }
-            Planet::Earth => {
-                let earth = Planet::Earth.orbit().elements_short.position_icrf(time);
-                IcrfStateVector {
-                    unit: self.unit,
-                    position: self.position + earth.unit.to(self.unit, &earth.position),
-                    velocity: self.velocity + earth.unit.to(self.unit, &earth.velocity),
-                }
-            }
-            Planet::Mars => {
-                todo!()
-            }
-            Planet::Jupiter => {
-                todo!()
-            }
-            Planet::Saturn => {
-                todo!()
-            }
-            Planet::Uranus => {
-                todo!()
-            }
-            Planet::Neptune => {
-                todo!()
+        } else {
+            let planet_icrf = self.planet.pos_icrf(time);
+            IcrfStateVector {
+                unit: self.unit,
+                position: as_inertial.position
+                    + planet_icrf.unit.to(self.unit, &planet_icrf.position),
+                velocity: as_inertial.velocity
+                    + planet_icrf.unit.to(self.unit, &planet_icrf.velocity),
             }
         }
     }
@@ -100,36 +86,22 @@ impl PlanetaryStateVector {
         time: &Timebase,
         planet: Planet,
     ) -> PlanetaryStateVector {
-        let planet_pos = planet.orbit().elements_short.position_icrf(time);
+        let planet_pos = planet.pos_icrf(time);
         match planet {
-            Planet::Mercury => {
-                todo!()
-            }
-            Planet::Venus => {
-                todo!()
-            }
-            Planet::Earth => PlanetaryStateVector {
+            Planet::Sun => PlanetaryStateVector {
+                planet,
+                reference_frame: PlanetaryReferenceFrame::Inertial,
+                unit: icrf.unit,
+                position: icrf.position,
+                velocity: icrf.velocity,
+            },
+            _ => PlanetaryStateVector {
                 planet,
                 reference_frame: PlanetaryReferenceFrame::Inertial,
                 unit: icrf.unit,
                 position: icrf.position - planet_pos.unit.to(icrf.unit, &planet_pos.position),
                 velocity: icrf.velocity - planet_pos.unit.to(icrf.unit, &planet_pos.velocity),
             },
-            Planet::Mars => {
-                todo!()
-            }
-            Planet::Jupiter => {
-                todo!()
-            }
-            Planet::Saturn => {
-                todo!()
-            }
-            Planet::Uranus => {
-                todo!()
-            }
-            Planet::Neptune => {
-                todo!()
-            }
         }
     }
 }
@@ -147,7 +119,7 @@ impl Display for PlanetaryStateVector {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "[x,y,z][vx,vy,vz]@{}-Centered {}: [{},{},{}][{},{},{}]",
+            "[x,y,z][vx,vy,vz]@{}-Centered {}: [{:+e},{:+e},{:+e}][{:+e},{:+e},{:+e}]",
             self.planet,
             self.reference_frame,
             self.position.x,

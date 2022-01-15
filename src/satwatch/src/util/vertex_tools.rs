@@ -23,7 +23,38 @@ pub fn gen_orbit_points(
         results.push(Vec3::new(
             (gl_coord.x) as f32,
             (gl_coord.y) as f32,
+            (gl_coord.z) as f32,
+        ));
+        if i + 1 < elements {
+            indices.push(i);
+            indices.push(i + 1);
+        }
+    }
+
+    (results, indices)
+}
+
+pub fn gen_orbit_points_icrf(
+    points: Vec<IcrfStateVector>,
+    world_scale: f64,
+    scale_unit: CoordinateUnit,
+    gl_origin: &IcrfStateVector,
+) -> (Vec<Vec3>, Vec<u32>) {
+    let mut results = Vec::new();
+    //01,12,23,...,n0
+    let mut indices = Vec::new();
+
+    let elements = points.len() as u32;
+    for i in 0..elements {
+        let gl_coord: DVec3 =
+            points
+                .get(i as usize)
+                .unwrap()
+                .to_gl_coord(world_scale, scale_unit, gl_origin);
+        results.push(Vec3::new(
             (gl_coord.x) as f32,
+            (gl_coord.y) as f32,
+            (gl_coord.z) as f32,
         ));
         if i + 1 < elements {
             indices.push(i);

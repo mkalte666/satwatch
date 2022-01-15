@@ -1,17 +1,20 @@
 use crate::components::{Camera, DirectionalLight, MaterialComponent, VertexList, WorldTransform};
 use crate::util::input_events::Event;
-use crate::util::vertex_tools::gen_icosphere;
+use crate::util::vertex_tools::{gen_icosphere, gen_orbit_points_icrf};
 use crate::world::world_ui::WorldUi;
 use glam::f32::*;
 use glam::f64::*;
 use glam::EulerRot;
 use imgui::*;
+use legion::query::{ComponentFilter, EntityFilterTuple};
 use legion::*;
 use libspace::bodies::Planet;
 use libspace::coordinate::{
     CoordinateUnit, IcrfStateVector, PlanetaryReferenceFrame, PlanetaryStateVector,
 };
 use libspace::timebase::Timebase;
+
+struct OrbitObjectTag {}
 
 pub struct ViewUi {
     visible: bool,
@@ -27,7 +30,7 @@ pub struct ViewUi {
 impl ViewUi {
     pub fn new(gl: &glow::Context, world: &mut World) -> Result<Self, String> {
         let camera_entity = world.push((
-            Camera::new(90.0, 0.01, 1000.0),
+            Camera::new(90.0, 0.01, 10000000000000000.0),
             PlanetaryStateVector {
                 planet: Planet::Earth,
                 reference_frame: PlanetaryReferenceFrame::Inertial,
@@ -68,7 +71,8 @@ impl ViewUi {
     }
 
     fn add_planets(&self, gl: &glow::Context, world: &mut World) -> Result<(), String> {
-        //self.add_planet(gl, world, Planet::Mercury)?;
+        self.add_planet(gl, world, Planet::Sun)?;
+        self.add_planet(gl, world, Planet::Mercury)?;
         //self.add_planet(gl, world, Planet::Venus)?;
         self.add_planet(gl, world, Planet::Earth)?;
         //self.add_planet(gl, world, Planet::Mars)?;
@@ -93,21 +97,49 @@ impl ViewUi {
             MaterialComponent("material/earth.toml".to_string()),
         ));
 
+        let (orb_vert, orb_index) = gen_orbit_points_icrf(
+            planet.rough_pos_list(&Timebase::new()),
+            self.world_scale,
+            self.world_scale_unit,
+            &self.gl_origin,
+        );
+        world.push((
+            OrbitObjectTag {},
+            planet,
+            WorldTransform::default(),
+            VertexList::create_lines(gl, &orb_vert, Some(&orb_index), None).unwrap(),
+            MaterialComponent("material/colored_orbit.toml".to_string()),
+        ));
         Ok(())
     }
 
     fn reset_view(&mut self, gl: &glow::Context, world: &mut World) {
-        // camera
-        if let Ok(mut cam_entry) = world.entry_mut(self.camera_entity) {
-            if let Ok(cam_pos) = cam_entry.get_component_mut::<PlanetaryStateVector>() {
-                cam_pos.position =
-                    DVec3::new(self.target_planet.body().radius_mean * 5.0, 0.0, 0.0);
-                cam_pos.planet = self.target_planet;
+        // special case: sun
+        if self.target_planet == Planet::Sun {
+            if let Ok(mut cam_entry) = world.entry_mut(self.camera_entity) {
+                if let Ok(cam_pos) = cam_entry.get_component_mut::<PlanetaryStateVector>() {
+                    cam_pos.position = DVec3::new(1.5, 0.5, 0.0);
+                    cam_pos.planet = self.target_planet;
+                    cam_pos.unit = CoordinateUnit::KiloMeter;
+                }
             }
+            // world scale
+            self.world_scale = 1.0;
+            self.world_scale_unit = CoordinateUnit::Au;
+        } else {
+            // cam
+            if let Ok(mut cam_entry) = world.entry_mut(self.camera_entity) {
+                if let Ok(cam_pos) = cam_entry.get_component_mut::<PlanetaryStateVector>() {
+                    cam_pos.position =
+                        DVec3::new(self.target_planet.body().radius_mean * 5.0, 0.0, 0.0);
+                    cam_pos.planet = self.target_planet;
+                    cam_pos.unit = CoordinateUnit::KiloMeter;
+                }
+            }
+            // world scale
+            self.world_scale = self.target_planet.body().radius_mean;
+            self.world_scale_unit = CoordinateUnit::KiloMeter;
         }
-        // world scale
-        self.world_scale = self.target_planet.body().radius_mean;
-        self.world_scale_unit = CoordinateUnit::KiloMeter;
     }
 
     fn update_camera(&mut self, gl: &glow::Context, world: &mut World, timebase: &Timebase) {
@@ -170,6 +202,11 @@ impl WorldUi for ViewUi {
                     if ui.collapsing_header("Target Planet", TreeNodeFlags::DEFAULT_OPEN) {
                         triggers_reset = triggers_reset || ui.button("Reset View");
                         let old_target = self.target_planet;
+                        ui.radio_button(
+                            Planet::Sun.to_string(),
+                            &mut self.target_planet,
+                            Planet::Sun,
+                        );
                         ui.radio_button(
                             Planet::Mercury.to_string(),
                             &mut self.target_planet,
@@ -244,16 +281,14 @@ impl WorldUi for ViewUi {
         timebase: &mut Timebase,
     ) -> Result<(), String> {
         // update gl origin to target
-        self.gl_origin = self
-            .target_planet
-            .orbit()
-            .elements_short
-            .position_icrf(timebase);
+        self.gl_origin = self.target_planet.pos_icrf(timebase);
 
         // update planet positions
-        let mut planet_query = <(&Planet, &mut WorldTransform)>::query();
+        let mut planet_query =
+            <(&Planet, &mut WorldTransform)>::query().filter(!component::<OrbitObjectTag>());
         for (planet, transform) in planet_query.iter_mut(world) {
-            let pos = planet.orbit().elements_short.position_icrf(timebase);
+            let pos = planet.pos_icrf(timebase);
+            log::trace!("Planet {} position update: {}", planet, pos);
             *transform = WorldTransform::from_icrf(
                 &pos,
                 &self.gl_origin,
@@ -262,6 +297,25 @@ impl WorldUi for ViewUi {
                 Some(*transform),
             );
             transform.rotation = planet.gl_rotation_at(timebase);
+            // we should also touch scale
+            let scale: f64 = (planet.body().radius_mean
+                / self
+                    .world_scale_unit
+                    .to(CoordinateUnit::KiloMeter, &self.world_scale))
+            .max(0.01);
+            transform.scale = Vec3::new(scale as f32, scale as f32, scale as f32);
+        }
+
+        // planet orbits
+        let mut orbit_query = <(&OrbitObjectTag, &Planet, &mut VertexList)>::query();
+        for (_tag, planet, list) in orbit_query.iter_mut(world) {
+            let (orb_vert, orb_index) = gen_orbit_points_icrf(
+                planet.rough_pos_list(&Timebase::new()),
+                self.world_scale,
+                self.world_scale_unit,
+                &self.gl_origin,
+            );
+            *list = VertexList::create_lines(gl, &orb_vert, Some(&orb_index), None)?;
         }
 
         // update things with planetary positions

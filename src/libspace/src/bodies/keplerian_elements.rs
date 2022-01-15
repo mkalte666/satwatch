@@ -55,10 +55,13 @@ impl KeplerianElements {
         let long_ascending = (self.long_ascending_0 + self.long_ascending_cy * t).to_radians();
 
         let argument_perihelion = long_perihelion - long_ascending;
-        let mean_anomaly = mean_longitude - long_perihelion
+        let mean_anomaly_no_modulo = mean_longitude - long_perihelion
             + self.b * t * t
             + self.c * ((self.f * t).to_radians()).cos()
             + self.s * ((self.f * t).to_radians()).sin();
+        let mean_anomaly = ((mean_anomaly_no_modulo + std::f64::consts::PI)
+            % (2.0 * std::f64::consts::PI))
+            - std::f64::consts::PI;
         let eccentric_anomaly = self.solve_keplers_equation(mean_anomaly);
 
         let x_hel = semi_mayor * (eccentric_anomaly.cos() - eccentricity);
@@ -78,7 +81,7 @@ impl KeplerianElements {
                 + argument_perihelion.cos() * long_ascending.cos() * inclination.cos())
                 * y_hel;
         let z_ecl = argument_perihelion.sin() * inclination.sin() * x_hel
-            + argument_perihelion.cos() * inclination.sin();
+            + argument_perihelion.cos() * inclination.sin() * y_hel;
         [x_ecl, y_ecl, z_ecl]
     }
 

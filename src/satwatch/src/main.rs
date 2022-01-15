@@ -24,8 +24,14 @@ fn glow_context(window: &Window) -> glow::Context {
     }
 }
 
-fn main() -> Result<(), String> {
+fn log_level() {
     log::set_max_level(log::LevelFilter::Debug);
+    #[cfg(feature = "trace_logging")]
+    log::set_max_level(log::LevelFilter::Trace);
+}
+
+fn main() -> Result<(), String> {
+    log_level();
     let mut imgui_logger = ImguiLoggerUi::init();
 
     let sdl = sdl2::init()?;

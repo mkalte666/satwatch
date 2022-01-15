@@ -1,11 +1,16 @@
-use crate::bodies::body::{Body, Orbit};
+use crate::bodies::body::Body;
+use crate::bodies::orbit::Orbit;
 use crate::bodies::planets::earth;
+use crate::bodies::planets::mercury;
+use crate::bodies::planets::sun;
+use crate::coordinate::{CoordinateUnit, IcrfStateVector};
 use crate::timebase::Timebase;
 use glam::Quat;
 use std::fmt::{Display, Formatter};
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum Planet {
+    Sun,
     Mercury,
     Venus,
     Earth,
@@ -19,9 +24,8 @@ pub enum Planet {
 impl Planet {
     pub fn body(&self) -> &Body {
         match self {
-            Planet::Mercury => {
-                todo!()
-            }
+            Planet::Sun => &sun::SUN_BODY,
+            Planet::Mercury => &mercury::MERCURY_BODY,
             Planet::Venus => {
                 todo!()
             }
@@ -44,11 +48,39 @@ impl Planet {
         }
     }
 
+    pub fn pos_icrf(&self, timebase: &Timebase) -> IcrfStateVector {
+        // specal case sun
+        if *self == Planet::Sun {
+            IcrfStateVector {
+                unit: CoordinateUnit::Au,
+                position: Default::default(),
+                velocity: Default::default(),
+            }
+        } else {
+            self.orbit().position_icrf(timebase)
+        }
+    }
+
+    pub fn rough_pos_list(&self, timebase: &Timebase) -> Vec<IcrfStateVector> {
+        if *self == Planet::Sun {
+            Vec::new()
+        } else {
+            let mut results = Vec::new();
+            for i in 0..((self.body().sidereal_period.ceil() + 1.0) as usize) {
+                let t = timebase.now_julian_since_j2000() + i as f64;
+                results.push(self.orbit().position_icrf_since_j2000(t));
+            }
+
+            results
+        }
+    }
+
     pub fn orbit(&self) -> &Orbit {
         match self {
-            Planet::Mercury => {
-                todo!()
+            Planet::Sun => {
+                panic!("Sun has no orbit");
             }
+            Planet::Mercury => &mercury::MERCURY_ORBIT,
             Planet::Venus => {
                 todo!()
             }
@@ -73,9 +105,8 @@ impl Planet {
 
     pub fn angle_at(&self, time: &Timebase) -> f64 {
         match self {
-            Planet::Mercury => {
-                todo!()
-            }
+            Planet::Sun => 0.0,
+            Planet::Mercury => 0.0,
             Planet::Venus => {
                 todo!()
             }
@@ -104,6 +135,7 @@ impl Planet {
 
     pub fn gl_rotation_at(&self, timebase: &Timebase) -> Quat {
         match self {
+            Planet::Sun => Quat::default(),
             Planet::Mercury => Quat::default(),
             Planet::Venus => Quat::default(),
             Planet::Earth => Quat::from_rotation_y(self.angle_at(timebase) as f32),
@@ -119,6 +151,7 @@ impl Planet {
 impl Display for Planet {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
+            Planet::Sun => write!(f, "Sun"),
             Planet::Mercury => write!(f, "Mercury"),
             Planet::Venus => write!(f, "Venus"),
             Planet::Earth => write!(f, "Earth"),
