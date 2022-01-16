@@ -200,7 +200,13 @@ impl ViewUi {
 }
 
 impl WorldUi for ViewUi {
-    fn main_menu(&mut self, ui: &Ui) {}
+    fn main_menu(&mut self, ui: &Ui) {
+        ui.menu("View", || {
+            if ui.menu_item("View") {
+                self.visible = true;
+            }
+        });
+    }
 
     fn ui(&mut self, gl: &glow::Context, world: &mut World, ui: &mut Ui) -> Result<(), String> {
         let mut triggers_reset = false;
