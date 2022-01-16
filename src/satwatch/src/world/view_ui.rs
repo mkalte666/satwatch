@@ -164,7 +164,7 @@ impl ViewUi {
             rot = Quat::from_rotation_y(self.camera_rot.y)
                 * rot
                 * Quat::from_rotation_x(self.camera_rot.x)
-                * Quat::from_rotation_y(self.camera_rot.z);
+                * Quat::from_rotation_z(self.camera_rot.z);
             self.camera_rot = Vec3::default();
 
             // update translation
