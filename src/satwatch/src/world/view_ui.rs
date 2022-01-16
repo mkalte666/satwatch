@@ -160,18 +160,15 @@ impl ViewUi {
                 icrf.to_gl_coord(self.world_scale, self.world_scale_unit, &self.gl_origin);
 
             // update rotation
-            let old_rot: Quat = cam_transform.rotation.clone();
-            let (y, x, z) = old_rot.to_euler(EulerRot::YXZ);
-            let new_rot = Quat::from_euler(
-                EulerRot::YXZ,
-                y + self.camera_rot.y,
-                x + self.camera_rot.x,
-                z + self.camera_rot.z,
-            );
+            let mut rot: Quat = cam_transform.rotation.clone();
+            rot = Quat::from_rotation_y(self.camera_rot.y)
+                * rot
+                * Quat::from_rotation_x(self.camera_rot.x)
+                * Quat::from_rotation_y(self.camera_rot.z);
             self.camera_rot = Vec3::default();
 
             // update translation
-            let rotated_speed = new_rot.mul_vec3(self.camera_velocity);
+            let rotated_speed = rot.mul_vec3(self.camera_velocity);
             gl_pos = gl_pos
                 + DVec3::new(
                     rotated_speed.x as f64,
@@ -193,7 +190,7 @@ impl ViewUi {
                 self.world_scale_unit,
                 None,
             );
-            cam_transform.rotation = new_rot;
+            cam_transform.rotation = rot;
             *cam_pos = PlanetaryStateVector::from_icrf(new_icrf, timebase, self.target_planet);
         }
     }
