@@ -14,7 +14,7 @@ use libspace::coordinate::{
 };
 use libspace::timebase::Timebase;
 
-struct OrbitObjectTag {}
+struct OrbitObjectTag(f64);
 
 pub struct ViewUi {
     visible: bool,
@@ -25,6 +25,7 @@ pub struct ViewUi {
     camera_velocity: Vec3,
     camera_rot: Vec3,
     camera_entity: Entity,
+    need_orbit_redraw: bool,
 }
 
 impl ViewUi {
@@ -58,6 +59,7 @@ impl ViewUi {
             camera_velocity: Vec3::new(0.0, 0.0, 0.0),
             camera_rot: Vec3::new(0.0, 0.0, 0.0),
             camera_entity,
+            need_orbit_redraw: true,
         };
 
         new.add_planets(gl, world)?;
@@ -104,7 +106,7 @@ impl ViewUi {
             &self.gl_origin,
         );
         world.push((
-            OrbitObjectTag {},
+            OrbitObjectTag(Timebase::new().now_julian_since_j2000()),
             planet,
             WorldTransform::default(),
             VertexList::create_lines(gl, &orb_vert, Some(&orb_index), None).unwrap(),
@@ -114,13 +116,17 @@ impl ViewUi {
     }
 
     fn reset_view(&mut self, gl: &glow::Context, world: &mut World) {
+        self.need_orbit_redraw = true;
         // special case: sun
         if self.target_planet == Planet::Sun {
             if let Ok(mut cam_entry) = world.entry_mut(self.camera_entity) {
                 if let Ok(cam_pos) = cam_entry.get_component_mut::<PlanetaryStateVector>() {
-                    cam_pos.position = DVec3::new(1.5, 0.5, 0.0);
+                    cam_pos.position = DVec3::new(0.0, 0.0, 6.0);
                     cam_pos.planet = self.target_planet;
-                    cam_pos.unit = CoordinateUnit::KiloMeter;
+                    cam_pos.unit = CoordinateUnit::Au;
+                }
+                if let Ok(cam_trans) = cam_entry.get_component_mut::<WorldTransform>() {
+                    cam_trans.rotation = Quat::default();
                 }
             }
             // world scale
@@ -134,6 +140,9 @@ impl ViewUi {
                         DVec3::new(self.target_planet.body().radius_mean * 5.0, 0.0, 0.0);
                     cam_pos.planet = self.target_planet;
                     cam_pos.unit = CoordinateUnit::KiloMeter;
+                }
+                if let Ok(cam_trans) = cam_entry.get_component_mut::<WorldTransform>() {
+                    cam_trans.rotation = Quat::default();
                 }
             }
             // world scale
@@ -307,16 +316,22 @@ impl WorldUi for ViewUi {
         }
 
         // planet orbits
-        let mut orbit_query = <(&OrbitObjectTag, &Planet, &mut VertexList)>::query();
-        for (_tag, planet, list) in orbit_query.iter_mut(world) {
-            let (orb_vert, orb_index) = gen_orbit_points_icrf(
-                planet.rough_pos_list(&Timebase::new()),
-                self.world_scale,
-                self.world_scale_unit,
-                &self.gl_origin,
-            );
-            *list = VertexList::create_lines(gl, &orb_vert, Some(&orb_index), None)?;
+        let mut orbit_query = <(&mut OrbitObjectTag, &Planet, &mut VertexList)>::query();
+        for (tag, planet, list) in orbit_query.iter_mut(world) {
+            if self.need_orbit_redraw
+                || (tag.0 - timebase.now_julian_since_j2000()).abs() > planet.body().sidereal_period
+            {
+                let (orb_vert, orb_index) = gen_orbit_points_icrf(
+                    planet.rough_pos_list(&timebase),
+                    self.world_scale,
+                    self.world_scale_unit,
+                    &self.gl_origin,
+                );
+                tag.0 = timebase.now_julian_since_j2000();
+                *list = VertexList::create_lines(gl, &orb_vert, Some(&orb_index), None)?;
+            }
         }
+        self.need_orbit_redraw = false;
 
         // update things with planetary positions
         let mut planet_state_query = <(&PlanetaryStateVector, &mut WorldTransform)>::query();
