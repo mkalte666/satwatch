@@ -73,13 +73,13 @@ impl ViewUi {
     fn add_planets(&self, gl: &glow::Context, world: &mut World) -> Result<(), String> {
         self.add_planet(gl, world, Planet::Sun)?;
         self.add_planet(gl, world, Planet::Mercury)?;
-        //self.add_planet(gl, world, Planet::Venus)?;
+        self.add_planet(gl, world, Planet::Venus)?;
         self.add_planet(gl, world, Planet::Earth)?;
-        //self.add_planet(gl, world, Planet::Mars)?;
-        //self.add_planet(gl, world, Planet::Jupiter)?;
-        //self.add_planet(gl, world, Planet::Saturn)?;
-        //self.add_planet(gl, world, Planet::Uranus)?;
-        //self.add_planet(gl, world, Planet::Neptune)?;
+        self.add_planet(gl, world, Planet::Mars)?;
+        self.add_planet(gl, world, Planet::Jupiter)?;
+        self.add_planet(gl, world, Planet::Saturn)?;
+        self.add_planet(gl, world, Planet::Uranus)?;
+        self.add_planet(gl, world, Planet::Neptune)?;
         Ok(())
     }
 

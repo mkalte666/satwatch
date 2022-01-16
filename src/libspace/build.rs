@@ -1,7 +1,9 @@
+mod gen_sources;
+use gen_sources::*;
+
 use sha2::{Digest, Sha256};
 use std::io::Read;
 
-use std::env;
 use std::fs::File;
 use std::path::{Path, PathBuf};
 use std::process::Command;
@@ -18,6 +20,7 @@ const DOWNLOAD_SPICE_SHA256: &'static str =
 
 fn main() {
     build_cspice();
+    gen_kepler();
 }
 
 fn download(url: &str, checksum: &str, target_filename: &PathBuf) -> Result<(), String> {
@@ -49,11 +52,6 @@ fn download(url: &str, checksum: &str, target_filename: &PathBuf) -> Result<(), 
 
     Ok(())
 }
-
-fn get_out_dir() -> PathBuf {
-    PathBuf::from(env::var_os("OUT_DIR").unwrap())
-}
-
 fn download_cspice() {
     let z_name = get_out_dir().join(Path::new(DOWNLOAD_SPICE_NAME_Z));
     download(DOWNLOAD_SPICE_URL, DOWNLOAD_SPICE_SHA256, &z_name)

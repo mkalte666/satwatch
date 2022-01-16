@@ -1,6 +1,4 @@
-mod earth;
-mod mercury;
 pub mod planet;
-mod sun;
+mod planet_bodies;
 
 pub use planet::*;

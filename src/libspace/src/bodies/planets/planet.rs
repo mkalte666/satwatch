@@ -1,12 +1,15 @@
 use crate::bodies::body::Body;
 use crate::bodies::orbit::Orbit;
-use crate::bodies::planets::earth;
-use crate::bodies::planets::mercury;
-use crate::bodies::planets::sun;
+use crate::bodies::planets::planet_bodies::*;
 use crate::coordinate::{CoordinateUnit, IcrfStateVector};
 use crate::timebase::Timebase;
 use glam::Quat;
 use std::fmt::{Display, Formatter};
+
+use crate::bodies::keplerian_elements::KeplerianElements;
+include!(concat!(env!("OUT_DIR"), "/kepler_short.rs"));
+include!(concat!(env!("OUT_DIR"), "/kepler_long.rs"));
+include!(concat!(env!("OUT_DIR"), "/kepler_orbits.rs"));
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum Planet {
@@ -24,27 +27,15 @@ pub enum Planet {
 impl Planet {
     pub fn body(&self) -> &Body {
         match self {
-            Planet::Sun => &sun::SUN_BODY,
-            Planet::Mercury => &mercury::MERCURY_BODY,
-            Planet::Venus => {
-                todo!()
-            }
-            Planet::Earth => &earth::EARTH_BODY,
-            Planet::Mars => {
-                todo!()
-            }
-            Planet::Jupiter => {
-                todo!()
-            }
-            Planet::Saturn => {
-                todo!()
-            }
-            Planet::Uranus => {
-                todo!()
-            }
-            Planet::Neptune => {
-                todo!()
-            }
+            Planet::Sun => &SUN_BODY,
+            Planet::Mercury => &MERCURY_BODY,
+            Planet::Venus => &VENUS_BODY,
+            Planet::Earth => &EARTH_BODY,
+            Planet::Mars => &MARS_BODY,
+            Planet::Jupiter => &JUPITER_BODY,
+            Planet::Saturn => &SATURN_BODY,
+            Planet::Uranus => &URANUS_BODY,
+            Planet::Neptune => &NEPTUNE_BODY,
         }
     }
 
@@ -80,26 +71,14 @@ impl Planet {
             Planet::Sun => {
                 panic!("Sun has no orbit");
             }
-            Planet::Mercury => &mercury::MERCURY_ORBIT,
-            Planet::Venus => {
-                todo!()
-            }
-            Planet::Earth => &earth::EARTH_ORBIT,
-            Planet::Mars => {
-                todo!()
-            }
-            Planet::Jupiter => {
-                todo!()
-            }
-            Planet::Saturn => {
-                todo!()
-            }
-            Planet::Uranus => {
-                todo!()
-            }
-            Planet::Neptune => {
-                todo!()
-            }
+            Planet::Mercury => &MERCURY_ORBIT,
+            Planet::Venus => &VENUS_ORBIT,
+            Planet::Earth => &EARTH_ORBIT,
+            Planet::Mars => &MARS_ORBIT,
+            Planet::Jupiter => &JUPITER_ORBIT,
+            Planet::Saturn => &SATURN_ORBIT,
+            Planet::Uranus => &URANUS_ORBIT,
+            Planet::Neptune => &NEPTUNE_ORBIT,
         }
     }
 
@@ -107,29 +86,17 @@ impl Planet {
         match self {
             Planet::Sun => 0.0,
             Planet::Mercury => 0.0,
-            Planet::Venus => {
-                todo!()
-            }
+            Planet::Venus => 0.0,
             Planet::Earth => {
                 let t = time.now_julian_since_j2000();
                 (2.0 * std::f64::consts::PI * (0.7790572732640 + 1.00273781191135448 * t))
                     % (2.0 * std::f64::consts::PI)
             }
-            Planet::Mars => {
-                todo!()
-            }
-            Planet::Jupiter => {
-                todo!()
-            }
-            Planet::Saturn => {
-                todo!()
-            }
-            Planet::Uranus => {
-                todo!()
-            }
-            Planet::Neptune => {
-                todo!()
-            }
+            Planet::Mars => 0.0,
+            Planet::Jupiter => 0.0,
+            Planet::Saturn => 0.0,
+            Planet::Uranus => 0.0,
+            Planet::Neptune => 0.0,
         }
     }
 
