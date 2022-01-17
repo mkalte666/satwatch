@@ -2,15 +2,16 @@ use serde::{Deserialize, Serialize};
 
 use sgp4::Elements;
 use std::collections::HashMap;
+use std::fs::File;
 use std::path::{Path, PathBuf};
+
+use crate::elements::element_store::ElementStore;
+use crate::elements::element_util::*;
+use crate::elements::ElementIndex;
 
 pub struct ElementDb {
     element_store: ElementStore,
-}
-
-#[derive(Serialize, Deserialize)]
-struct ElementStore {
-    elements: HashMap<u64, Elements>,
+    index: ElementIndex,
 }
 
 fn init_dirs() -> Result<PathBuf, String> {
@@ -34,6 +35,7 @@ impl ElementDb {
         if let Ok(file) = std::fs::File::open(data_filename) {
             if let Ok(store) = serde_json::from_reader(file) {
                 return Self {
+                    index: ElementIndex::from_store(&store),
                     element_store: store,
                 };
             }
@@ -43,6 +45,7 @@ impl ElementDb {
             element_store: ElementStore {
                 elements: HashMap::new(),
             },
+            index: ElementIndex::empty(),
         }
     }
 
@@ -73,11 +76,7 @@ impl ElementDb {
     pub fn save(&self) {
         let data_dir = init_dirs().expect("Something is wrong, you cant write home!");
         let data_filename = data_dir.join(Path::new("elements.json"));
-        let f = std::fs::OpenOptions::new()
-            .write(true)
-            .create(true)
-            .open(data_filename)
-            .expect("Could not open file");
+        let f = File::create(data_filename).expect("Could not open elements file");
         serde_json::to_writer(f, &self.element_store).unwrap();
     }
 
@@ -85,7 +84,19 @@ impl ElementDb {
         self.element_store.elements.get(&key)
     }
 
+    pub fn get_copy(&self, key: u64) -> Option<sgp4::Elements> {
+        if let Some(as_ref) = self.get(key) {
+            Some(element_copy(as_ref))
+        } else {
+            None
+        }
+    }
+
     pub fn all(&self) -> &HashMap<u64, Elements> {
         return &self.element_store.elements;
+    }
+
+    pub fn index(&self) -> &ElementIndex {
+        &self.index
     }
 }

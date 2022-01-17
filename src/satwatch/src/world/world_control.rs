@@ -2,6 +2,7 @@ use imgui::*;
 use legion::*;
 
 use crate::util::input_events::Event;
+use crate::world::element_db_ui::DbUi;
 use crate::world::time_ui::TimeUi;
 use crate::world::view_ui::ViewUi;
 use crate::world::world_ui::WorldUi;
@@ -17,7 +18,11 @@ pub struct WorldControl {
 impl WorldControl {
     pub fn new(gl: &glow::Context, world: &mut World) -> Result<Self, String> {
         Ok(Self {
-            uis: vec![Box::new(TimeUi::new()), Box::new(ViewUi::new(gl, world)?)],
+            uis: vec![
+                Box::new(TimeUi::new()),
+                Box::new(ViewUi::new(gl, world)?),
+                Box::new(DbUi::new()),
+            ],
             last_tick: Instant::now(),
             timebase: Timebase::new(),
         })
