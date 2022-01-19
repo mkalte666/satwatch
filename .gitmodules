@@ -1,0 +1,3 @@
+[submodule "src/satwatch/assets"]
+	path = src/satwatch/assets
+	url = https://github.com/mkalte666/satwatch-assets
