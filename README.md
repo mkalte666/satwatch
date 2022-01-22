@@ -20,11 +20,11 @@ You will need a c and c++ compiler installed for some dependencies to build corr
 The todo, until this gets close to something resembling a release,is rather big.
 This is not exhaustive, but for a "1.0" these are the features to go for 
 
-####Earth satellites 
+#### Earth satellites 
  * [x] SGP4 based TLE propagation 
  * [ ] UI and drawing improvements for the ui related to this 
 
-####Directly SPICE related
+#### Directly SPICE related
  * [x] NASA-SPICE in the build
  * [ ] SPICE-Based Time 
  * [ ] SPICE-Based (using PDS Data) Planet positions
@@ -32,7 +32,7 @@ This is not exhaustive, but for a "1.0" these are the features to go for
  * [ ] An integrated downloader for NASA PDS Data
  * [ ] Correct rotations of all planets (and maybe the sun, if its texture is good enough)
  
-####Other functionality 
+#### Other functionality 
  * [ ] Observation(aka passes) finder from 
  * [ ] Lat/Long/Altitude coordinates 
  * [ ] Planets are not spheres
@@ -41,12 +41,12 @@ This is not exhaustive, but for a "1.0" these are the features to go for
  * [ ] More consistent UI. Probably best tackled somewhere in between "nearly everything is prototyped" and "too late to fix the current state"
  * [ ] Some sort of welcome-screen that takes care of the initial requred downloads (Planetary ephemeris and leap second kernel)
 
-####More basic stuff 
+#### More basic stuff 
  * [ ] UV-Mapped Textures for objects 
  * [ ] Some form of view-frustrum culling, maybe, if needed on weaker machines. I doubt it, needs testing. 
  * [ ] Orbit camera instead of the FPS one currently implemented. Would then probably play better with the euler singularities as well. Were not a spaceship :(
 
-####Not directly code related 
+#### Not directly code related 
  * [ ] Some cool screenshots for this readme 
  * [ ] CI builds 
  * [ ] Write a blog post or talk when this is finished, explaning the whole thing. 
