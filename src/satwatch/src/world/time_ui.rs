@@ -51,9 +51,7 @@ impl WorldUi for TimeUi {
 
                     if !rt {
                         let mut accel = self.timebase.acceleration();
-                        imgui::Slider::new("Acceleration", -10e8, 10e8)
-                            .flags(SliderFlags::LOGARITHMIC)
-                            .build(&ui, &mut accel);
+                        ui.slider("Time Acceleration", -10e8, 10e8, &mut accel);
                         self.timebase.set_acceleration(accel);
                     }
                 });
