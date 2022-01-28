@@ -49,9 +49,13 @@ path = "../libspace"
 [dependencies.glow]
 version = "0.10.0"
 
-[dependencies.sdl2]
+[target.'cfg(not(target_os = "windows"))'.dependencies.sdl2]
 version = "^0.35"
 features = ["default", "image"]
+
+[target.'cfg(target_os = "windows")'.dependencies.sdl2]
+version = "^0.35"
+features = ["default", "image", "bundled"]
 
 [dependencies.serde]
 version = "1"
