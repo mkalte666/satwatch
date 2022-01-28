@@ -10,13 +10,31 @@ use std::process::Command;
 use tar::Archive;
 
 const DOWNLOAD_SPICE_NAME_Z: &'static str = "cspice.tar.Z";
-const DOWNLOAD_SPICE_NAME_TAR: &'static str = "cspice.tar";
+
 const DOWNLOAD_CSPICE_NAME: &'static str = "cspice";
 const CSPICE_BUILD_SCRIPT_NAME: &'static str = "./makeall.csh";
+
+#[cfg(target_os = "linux")]
 const DOWNLOAD_SPICE_URL: &'static str =
     "https://naif.jpl.nasa.gov/pub/naif/toolkit//C/PC_Linux_GCC_64bit/packages/cspice.tar.Z";
+
+#[cfg(target_os = "linux")]
 const DOWNLOAD_SPICE_SHA256: &'static str =
     "60a95b51a6472f1afe7e40d77ebdee43c12bb5b8823676ccc74692ddfede06ce";
+
+#[cfg(target_os = "linux")]
+const DOWNLOAD_SPICE_NAME_TAR: &'static str = "cspice.tar";
+
+#[cfg(target_os = "windows")]
+const DOWNLOAD_SPICE_NAME_ZIP: &'static str = "cspice.zip";
+
+#[cfg(target_os = "windows")]
+const DOWNLOAD_SPICE_URL: &'static str =
+    "https://naif.jpl.nasa.gov/pub/naif/toolkit/C/PC_Windows_VisualC_64bit/packages/cspice.zip";
+
+#[cfg(target_os = "windows")]
+const DOWNLOAD_SPICE_SHA256: &'static str =
+    "98d60b814b412fa55294aeaaeb7dab46d849cc87a8b709ffe835d08de17625dc";
 
 fn main() {
     build_cspice();
@@ -58,6 +76,7 @@ fn download_cspice() {
         .unwrap_or_else(|error| panic!("CSPICE Download failed: {}", error));
 }
 
+#[cfg(target_os = "linux")]
 fn build_cspice() {
     download_cspice();
     let name_tar = get_out_dir().join(DOWNLOAD_SPICE_NAME_TAR);
@@ -92,6 +111,28 @@ fn build_cspice() {
         std::fs::copy(lib_name, good_lib_name).unwrap();
         std::fs::copy(sup_name, good_sup_name).unwrap();
     }
+
+    print!(
+        "cargo:rustc-link-search=[{}]",
+        name_cspice_dir.join("lib").to_str().unwrap()
+    );
+    print!("cargo:rustc-link-lib=[cspice]");
+    print!(
+        "cargo:rustc-cdylib-link-arg=[-I{}]",
+        name_cspice_dir.join("lib").to_str().unwrap()
+    );
+}
+
+#[cfg(target_os = "windows")]
+fn build_cspice() {
+    download_cspice();
+    let name_zip = get_out_dir().join(DOWNLOAD_SPICE_NAME_ZIP);
+    let name_cspice_dir = get_out_dir().join(DOWNLOAD_CSPICE_NAME);
+
+    let zip_file = std::fs::File::open(name_zip).unwrap();
+
+    let mut archive = zip::ZipArchive::new(zip_file).unwrap();
+    archive.extract(name_cspice_dir).unwrap();
 
     print!(
         "cargo:rustc-link-search=[{}]",
