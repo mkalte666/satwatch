@@ -106,7 +106,7 @@ impl ViewUi {
             &self.gl_origin,
         );
         world.push((
-            OrbitObjectTag(Timebase::new().now_julian_since_j2000()),
+            OrbitObjectTag(Timebase::new().now_jd_j2000()),
             planet,
             WorldTransform::default(),
             VertexList::create_lines(gl, &orb_vert, Some(&orb_index), None).unwrap(),
@@ -322,7 +322,7 @@ impl WorldUi for ViewUi {
         let mut orbit_query = <(&mut OrbitObjectTag, &Planet, &mut VertexList)>::query();
         for (tag, planet, list) in orbit_query.iter_mut(world) {
             if self.need_orbit_redraw
-                || (tag.0 - timebase.now_julian_since_j2000()).abs() > planet.body().sidereal_period
+                || (tag.0 - timebase.now_jd_j2000()).abs() > planet.body().sidereal_period
             {
                 let (orb_vert, orb_index) = gen_orbit_points_icrf(
                     planet.rough_pos_list(&timebase),
@@ -330,7 +330,7 @@ impl WorldUi for ViewUi {
                     self.world_scale_unit,
                     &self.gl_origin,
                 );
-                tag.0 = timebase.now_julian_since_j2000();
+                tag.0 = timebase.now_jd_j2000();
                 *list = VertexList::create_lines(gl, &orb_vert, Some(&orb_index), None)?;
             }
         }

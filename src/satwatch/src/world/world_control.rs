@@ -9,6 +9,8 @@ use crate::world::world_ui::WorldUi;
 use libspace::timebase::Timebase;
 use std::time::{Duration, Instant};
 
+use crate::main_loop::app_phase::AppPhase;
+
 pub struct WorldControl {
     uis: Vec<Box<dyn WorldUi>>,
     last_tick: Instant,
@@ -26,22 +28,6 @@ impl WorldControl {
             last_tick: Instant::now(),
             timebase: Timebase::new(),
         })
-    }
-
-    pub fn global_tick(&mut self, gl: &glow::Context, world: &mut World) -> Result<(), String> {
-        // tick rate housekeeping
-        // with early exit if we dont update
-        let tick_duration = Duration::from_secs_f64(1.0 / 60.0);
-
-        if Instant::now() - self.last_tick < tick_duration {
-            return Ok(());
-        }
-        self.last_tick = Instant::now();
-
-        let mut old_timebase = self.timebase.clone();
-        self.tick(gl, world, &mut old_timebase)?;
-        self.timebase = old_timebase;
-        Ok(())
     }
 }
 
@@ -77,5 +63,25 @@ impl WorldUi for WorldControl {
         }
 
         Ok(())
+    }
+
+    fn has_global_tick(&self) -> bool {
+        true
+    }
+
+    fn global_tick(&mut self, gl: &glow::Context, world: &mut World) -> Result<AppPhase, String> {
+        // tick rate housekeeping
+        // with early exit if we dont update
+        let tick_duration = Duration::from_secs_f64(1.0 / 60.0);
+
+        if Instant::now() - self.last_tick < tick_duration {
+            return Ok(AppPhase::Running);
+        }
+        self.last_tick = Instant::now();
+
+        let mut old_timebase = self.timebase.clone();
+        self.tick(gl, world, &mut old_timebase)?;
+        self.timebase = old_timebase;
+        Ok(AppPhase::Running)
     }
 }

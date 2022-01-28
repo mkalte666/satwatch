@@ -58,7 +58,7 @@ impl Planet {
         } else {
             let mut results = Vec::new();
             for i in 0..((self.body().sidereal_period.ceil() + 1.0) as usize) {
-                let t = timebase.now_julian_since_j2000() + i as f64;
+                let t = timebase.now_jd_j2000() + i as f64;
                 results.push(self.orbit().position_icrf_since_j2000(t));
             }
 
@@ -88,7 +88,7 @@ impl Planet {
             Planet::Mercury => 0.0,
             Planet::Venus => 0.0,
             Planet::Earth => {
-                let t = time.now_julian_since_j2000();
+                let t = time.now_jd_j2000();
                 (2.0 * std::f64::consts::PI * (0.7790572732640 + 1.00273781191135448 * t))
                     % (2.0 * std::f64::consts::PI)
             }

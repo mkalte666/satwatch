@@ -35,12 +35,12 @@ impl WorldUi for TimeUi {
             ui.window("Time Control")
                 .opened(&mut self.visible)
                 .build(|| {
-                    let utc: DateTime<Utc> = self.timebase.now();
-                    let local: DateTime<Local> = self.timebase.now().into();
+                    let utc: DateTime<Utc> = self.timebase.now_utc();
+                    let local: DateTime<Local> = self.timebase.now_utc().into();
                     ui.text(format!(
                         "Now Julian (since J2000): {} ({})",
-                        self.timebase.now_julian(),
-                        self.timebase.now_julian_since_j2000()
+                        self.timebase.now_jd(),
+                        self.timebase.now_jd_j2000()
                     ));
                     ui.text(format!("Now   UTC: {}", utc));
                     ui.text(format!("Now Local: {}", local));
@@ -69,7 +69,7 @@ impl WorldUi for TimeUi {
         _world: &mut World,
         timebase: &mut Timebase,
     ) -> Result<(), String> {
-        self.timebase.tick(Duration::from_secs_f64(1.0 / 60.0));
+        self.timebase.tick(1.0 / 60.0);
         *timebase = self.timebase.clone();
         Ok(())
     }

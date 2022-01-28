@@ -1,4 +1,6 @@
 mod components;
+mod download;
+mod main_loop;
 mod rendering;
 mod util;
 mod world;
@@ -10,6 +12,7 @@ use sdl2::{
 
 use imgui_glow_renderer::AutoRenderer;
 
+use crate::main_loop::app_phase::AppPhase;
 use crate::util::imgui_logger::*;
 use crate::util::input_events::sdl_to_our_event;
 use crate::util::sdl2_imgui_tmpfix::SdlPlatform;
@@ -75,60 +78,20 @@ fn main() -> Result<(), String> {
 
     let mut world = World::default();
     let mut render_system = crate::rendering::renderer::Renderer::create();
-    let mut world_control = WorldControl::new(imgui_renderer.gl_context(), &mut world)?;
 
-    'main_loop: loop {
-        for event in event_pump.poll_iter() {
-            use sdl2::event::WindowEvent;
-            platform.handle_event(&mut imgui, &event);
-            if let Event::Quit { .. } = event {
-                break 'main_loop;
-            } else if let Event::Window { win_event, .. } = event {
-                if let WindowEvent::Resized(w, h) = win_event {
-                    unsafe {
-                        imgui_renderer.gl_context().viewport(0, 0, w, h);
-                    }
-                }
-            } else {
-                let e = sdl_to_our_event(event);
-                world_control.handle_input(imgui_renderer.gl_context(), &mut world, e);
-            }
-        }
-
-        // world tick here
-        if let Err(e) = world_control.global_tick(imgui_renderer.gl_context(), &mut world) {
-            log::warn!("Issues during world tick: {}", e);
-        }
-
-        if let Err(e) = render_system.load(imgui_renderer.gl_context(), &mut world) {
-            log::error!("Issues during render: {}", e);
-        }
-        platform.prepare_frame(&mut imgui, &window, &event_pump);
-        let mut ui = imgui.frame();
-
-        ui.main_menu_bar(|| {
-            imgui_logger.main_menu(&ui);
-            world_control.main_menu(&ui);
-        });
-        imgui_logger.draw(&mut ui);
-
-        if let Err(e) = world_control.ui(imgui_renderer.gl_context(), &mut world, &mut ui) {
-            log::warn!("Issues during ui draw: {}", e);
-        }
-        let draw_data = imgui.render();
-
-        unsafe {
-            imgui_renderer
-                .gl_context()
-                .clear(glow::COLOR_BUFFER_BIT | glow::DEPTH_BUFFER_BIT);
-        }
-        let (w, h) = window.drawable_size();
-        let aspect = (w as f32) / (h as f32);
-        render_system.draw(imgui_renderer.gl_context(), &mut world, aspect);
-        imgui_renderer.render(draw_data).unwrap();
-
-        window.gl_swap_window();
-    }
+    let mut lp = main_loop::MainLoopData {
+        phase: AppPhase::Downloads,
+        imgui_logger,
+        window,
+        platform,
+        imgui,
+        imgui_renderer,
+        event_pump,
+        world,
+        render_system,
+        uis: Vec::new(),
+    };
+    lp.run();
 
     Ok(())
 }

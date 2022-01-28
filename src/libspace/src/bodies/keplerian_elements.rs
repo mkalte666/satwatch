@@ -86,7 +86,7 @@ impl KeplerianElements {
     }
 
     pub fn position_ecliptic(&self, timebase: &Timebase) -> [f64; 3] {
-        let time = timebase.now_julian_since_j2000();
+        let time = timebase.now_jd_j2000();
         self.position_ecliptic_since_j2000(time)
     }
 
@@ -107,7 +107,7 @@ impl KeplerianElements {
     }
 
     pub fn position_icrf(&self, timebase: &Timebase) -> IcrfStateVector {
-        let time = timebase.now_julian_since_j2000();
+        let time = timebase.now_jd_j2000();
         self.position_icrf_since_j2000(time)
     }
 

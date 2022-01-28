@@ -26,8 +26,13 @@ pub struct ElementEngine {
     timebase_tx: Sender<Timebase>,
 }
 
+pub struct WrappedElements {
+    epoch: f64,
+    elements: Elements,
+}
+
 struct WorkerData {
-    elements: HashMap<u64, Elements>,
+    elements: HashMap<u64, WrappedElements>,
     timebase: Timebase,
     element_tx: Sender<ElementUpdate>,
     add_rx: Receiver<Elements>,
@@ -123,7 +128,16 @@ impl WorkerData {
         'add_loop: loop {
             match self.add_rx.try_recv() {
                 Ok(elements) => {
-                    self.elements.insert(elements.norad_id, elements);
+                    self.elements.insert(
+                        elements.norad_id,
+                        WrappedElements {
+                            epoch: crate::timebase::date_time_to_et(DateTime::<Utc>::from_utc(
+                                elements.datetime,
+                                Utc,
+                            )),
+                            elements,
+                        },
+                    );
                 }
                 Err(_) => {
                     break 'add_loop;
@@ -148,9 +162,9 @@ impl WorkerData {
     fn update(&mut self) {
         let start = Instant::now();
         for (id, element) in &self.elements {
-            let tle_epoch: DateTime<Utc> = DateTime::from_utc(element.datetime, Utc);
-            let minutes = self.timebase.duration_since_minutes(tle_epoch);
-            if let Ok(constants) = sgp4::Constants::from_elements(element) {
+            let tle_epoch = element.epoch;
+            let minutes = self.timebase.minutes_since(tle_epoch);
+            if let Ok(constants) = sgp4::Constants::from_elements(&element.elements) {
                 if let Ok(prediction) = constants.propagate(minutes) {
                     let state = PlanetaryStateVector::from(prediction);
                     //let mut orb_points : Vec<Coordinate> = Vec::new();
