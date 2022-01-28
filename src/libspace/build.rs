@@ -128,12 +128,13 @@ fn build_cspice() {
 fn build_cspice() {
     download_cspice();
     let name_zip = get_out_dir().join(DOWNLOAD_SPICE_NAME_Z); //reusing NAME_Z so download function does not need to be modified
+    let name_cspice_extract_dir = get_out_dir();
     let name_cspice_dir = get_out_dir().join(DOWNLOAD_CSPICE_NAME);
 
     let zip_file = std::fs::File::open(name_zip).unwrap();
 
     let mut archive = zip::ZipArchive::new(zip_file).unwrap();
-    archive.extract(&name_cspice_dir).unwrap();
+    archive.extract(&name_cspice_extract_dir).unwrap();
 
     print!(
         "cargo:rustc-link-search=[{}]",
