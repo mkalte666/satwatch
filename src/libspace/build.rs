@@ -9,8 +9,6 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 use tar::Archive;
 
-const DOWNLOAD_SPICE_NAME_Z: &'static str = "cspice.tar.Z";
-
 const DOWNLOAD_CSPICE_NAME: &'static str = "cspice";
 const CSPICE_BUILD_SCRIPT_NAME: &'static str = "./makeall.csh";
 
@@ -25,8 +23,11 @@ const DOWNLOAD_SPICE_SHA256: &'static str =
 #[cfg(target_os = "linux")]
 const DOWNLOAD_SPICE_NAME_TAR: &'static str = "cspice.tar";
 
+#[cfg(target_os = "linux")]
+const DOWNLOAD_SPICE_NAME_Z: &'static str = "cspice.tar.Z";
+
 #[cfg(target_os = "windows")]
-const DOWNLOAD_SPICE_NAME_ZIP: &'static str = "cspice.zip";
+const DOWNLOAD_SPICE_NAME_Z: &'static str = "cspice.zip";
 
 #[cfg(target_os = "windows")]
 const DOWNLOAD_SPICE_URL: &'static str =
@@ -126,13 +127,13 @@ fn build_cspice() {
 #[cfg(target_os = "windows")]
 fn build_cspice() {
     download_cspice();
-    let name_zip = get_out_dir().join(DOWNLOAD_SPICE_NAME_ZIP);
+    let name_zip = get_out_dir().join(DOWNLOAD_SPICE_NAME_Z); //reusing NAME_Z so download function does not need to be modified
     let name_cspice_dir = get_out_dir().join(DOWNLOAD_CSPICE_NAME);
 
     let zip_file = std::fs::File::open(name_zip).unwrap();
 
     let mut archive = zip::ZipArchive::new(zip_file).unwrap();
-    archive.extract(name_cspice_dir).unwrap();
+    archive.extract(&name_cspice_dir).unwrap();
 
     print!(
         "cargo:rustc-link-search=[{}]",
