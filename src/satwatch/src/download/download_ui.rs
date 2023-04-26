@@ -1,14 +1,14 @@
 use crate::util::input_events::Event;
 use crate::world::world_ui::WorldUi;
 use glow::Context;
-use imgui::{TreeNodeFlags, Ui};
+use imgui::Ui;
 use legion::World;
 use libspace::timebase::{Timebase, SPICE_LSK_URL};
 
 use crate::download::downloader::*;
 use crate::download::DownloadStatus;
 use crate::main_loop::app_phase::AppPhase;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 struct Download {
     display_name: String,
@@ -38,9 +38,9 @@ impl DownloaderUi {
 }
 
 impl WorldUi for DownloaderUi {
-    fn main_menu(&mut self, ui: &Ui) {}
+    fn main_menu(&mut self, _ui: &Ui) {}
 
-    fn ui(&mut self, gl: &Context, world: &mut World, ui: &mut Ui) -> Result<(), String> {
+    fn ui(&mut self, _gl: &Context, _world: &mut World, ui: &mut Ui) -> Result<(), String> {
         let mut visible = self.visible;
         ui.window("Download SPICE Data").build(|| {
             ui.text("Leap Second Kernel");
@@ -73,13 +73,13 @@ impl WorldUi for DownloaderUi {
         Ok(())
     }
 
-    fn handle_input(&mut self, _gl: &Context, _world: &mut World, event: Event) {}
+    fn handle_input(&mut self, _gl: &Context, _world: &mut World, _event: Event) {}
 
     fn tick(
         &mut self,
-        gl: &Context,
-        world: &mut World,
-        timebase: &mut Timebase,
+        _gl: &Context,
+        _world: &mut World,
+        _timebase: &mut Timebase,
     ) -> Result<(), String> {
         Ok(())
     }

@@ -9,7 +9,7 @@ use libspace::coordinate::{CoordinateUnit, PlanetaryReferenceFrame, PlanetarySta
 use libspace::elements::*;
 use libspace::timebase::Timebase;
 use log::error;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 
 pub struct DbUi {
     visible: bool,
@@ -170,11 +170,11 @@ impl WorldUi for DbUi {
         Ok(())
     }
 
-    fn handle_input(&mut self, _gl: &glow::Context, _world: &mut World, event: Event) {}
+    fn handle_input(&mut self, _gl: &glow::Context, _world: &mut World, _event: Event) {}
 
     fn tick(
         &mut self,
-        gl: &glow::Context,
+        _gl: &glow::Context,
         world: &mut World,
         timebase: &mut Timebase,
     ) -> Result<(), String> {

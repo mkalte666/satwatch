@@ -5,19 +5,15 @@ mod rendering;
 mod util;
 mod world;
 
-use sdl2::{
-    event::Event,
-    video::{GLProfile, Window},
-};
+use sdl2::video::{GLProfile, Window};
 
 use imgui_glow_renderer::AutoRenderer;
 
 use crate::main_loop::app_phase::AppPhase;
 use crate::util::imgui_logger::*;
-use crate::util::input_events::sdl_to_our_event;
+
 use imgui_sdl2_support::SdlPlatform;
-use crate::world::world_control::WorldControl;
-use crate::world::world_ui::WorldUi;
+
 use glow::HasContext;
 use legion::*;
 
@@ -35,7 +31,7 @@ fn log_level() {
 
 fn main() -> Result<(), String> {
     log_level();
-    let mut imgui_logger = ImguiLoggerUi::init();
+    let imgui_logger = ImguiLoggerUi::init();
 
     let sdl = sdl2::init()?;
     let _image = sdl2::image::init(sdl2::image::InitFlag::all())?;
@@ -72,12 +68,12 @@ fn main() -> Result<(), String> {
         .fonts()
         .add_font(&[imgui::FontSource::DefaultFontData { config: None }]);
 
-    let mut platform = SdlPlatform::init(&mut imgui);
-    let mut imgui_renderer = AutoRenderer::initialize(gl, &mut imgui).unwrap();
-    let mut event_pump = sdl.event_pump().unwrap();
+    let platform = SdlPlatform::init(&mut imgui);
+    let imgui_renderer = AutoRenderer::initialize(gl, &mut imgui).unwrap();
+    let event_pump = sdl.event_pump().unwrap();
 
-    let mut world = World::default();
-    let mut render_system = crate::rendering::renderer::Renderer::create();
+    let world = World::default();
+    let render_system = crate::rendering::renderer::Renderer::create();
 
     let mut lp = main_loop::MainLoopData {
         phase: AppPhase::Downloads,

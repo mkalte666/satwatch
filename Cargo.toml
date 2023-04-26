@@ -3,3 +3,6 @@ members = [
     "src/libspace",
     "src/satwatch",
 ]
+
+[patch.crates-io]
+rust-spice = { git = "https://github.com/mkalte666/rust-spice", branch = "lock-mutex"}

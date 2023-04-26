@@ -2,10 +2,9 @@ use crate::util::input_events::Event;
 use crate::world::world_ui::WorldUi;
 use chrono::{DateTime, Local, Utc};
 use glow::Context;
-use imgui::{SliderFlags, Ui};
+use imgui::Ui;
 use legion::World;
 use libspace::timebase::Timebase;
-use std::time::Duration;
 
 pub struct TimeUi {
     visible: bool,
@@ -30,7 +29,7 @@ impl WorldUi for TimeUi {
         });
     }
 
-    fn ui(&mut self, gl: &Context, world: &mut World, ui: &mut Ui) -> Result<(), String> {
+    fn ui(&mut self, _gl: &Context, _world: &mut World, ui: &mut Ui) -> Result<(), String> {
         if self.visible {
             ui.window("Time Control")
                 .opened(&mut self.visible)
@@ -59,7 +58,7 @@ impl WorldUi for TimeUi {
         Ok(())
     }
 
-    fn handle_input(&mut self, _gl: &Context, _world: &mut World, event: Event) {}
+    fn handle_input(&mut self, _gl: &Context, _world: &mut World, _event: Event) {}
 
     fn tick(
         &mut self,

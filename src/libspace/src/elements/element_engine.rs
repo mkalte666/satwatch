@@ -1,4 +1,4 @@
-use sgp4::{Classification, Elements};
+use sgp4::Elements;
 
 use crate::coordinate::*;
 use crate::timebase::*;

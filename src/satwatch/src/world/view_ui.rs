@@ -4,9 +4,9 @@ use crate::util::vertex_tools::{gen_icosphere, gen_orbit_points_icrf};
 use crate::world::world_ui::WorldUi;
 use glam::f32::*;
 use glam::f64::*;
-use glam::EulerRot;
+
 use imgui::*;
-use legion::query::{ComponentFilter, EntityFilterTuple};
+
 use legion::*;
 use libspace::bodies::Planet;
 use libspace::coordinate::{
@@ -115,7 +115,7 @@ impl ViewUi {
         Ok(())
     }
 
-    fn reset_view(&mut self, gl: &glow::Context, world: &mut World) {
+    fn reset_view(&mut self, _gl: &glow::Context, world: &mut World) {
         self.need_orbit_redraw = true;
         // special case: sun
         if self.target_planet == Planet::Sun {
@@ -151,7 +151,7 @@ impl ViewUi {
         }
     }
 
-    fn update_camera(&mut self, gl: &glow::Context, world: &mut World, timebase: &Timebase) {
+    fn update_camera(&mut self, _gl: &glow::Context, world: &mut World, timebase: &Timebase) {
         let tick_speed: f64 = 1.0 / 60.0;
         let mut cam_query = <(&Camera, &mut PlanetaryStateVector, &mut WorldTransform)>::query();
         for (_cam, cam_pos, cam_transform) in cam_query.iter_mut(world) {

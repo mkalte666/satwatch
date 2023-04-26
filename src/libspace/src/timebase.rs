@@ -1,11 +1,11 @@
-use chrono::{DateTime, FixedOffset, NaiveDateTime, TimeZone, Utc};
+use chrono::{DateTime, NaiveDateTime, Utc};
 use spice::c::ConstSpiceChar;
-use spice::str2et;
+use spice::SpiceLock;
 use std::ffi::{CStr, CString};
-use std::ops::Add;
+
 use std::os::raw::c_char;
 use std::path::PathBuf;
-use std::str::FromStr;
+
 use std::time::*;
 
 #[derive(Copy, Clone, Debug)]
@@ -29,8 +29,8 @@ fn parse_spice_utc(s: &str) -> DateTime<Utc> {
 }
 
 pub fn date_time_to_et(t: DateTime<Utc>) -> f64 {
-    let _lock = crate::spice_lock::get_spice_lock();
-    str2et(&date_time_to_spice_str(t))
+    let sl = SpiceLock::acquire().expect("mutex poisoned. im sad now");
+    sl.str2et(&date_time_to_spice_str(t))
 }
 
 pub fn now_utc_str() -> String {
@@ -39,16 +39,17 @@ pub fn now_utc_str() -> String {
 }
 
 pub fn now_et() -> f64 {
-    let _lock = crate::spice_lock::get_spice_lock();
-    str2et(&now_utc_str())
+    let lock = SpiceLock::acquire().unwrap();
+    lock.str2et(&now_utc_str())
 }
 
 impl Timebase {
     pub fn new() -> Self {
+        let lock = SpiceLock::acquire().unwrap();
         Self {
             running: true,
             realtime: true,
-            now: str2et(&now_utc_str()),
+            now: lock.str2et(&now_utc_str()),
             acceleration: 1.0,
         }
     }
@@ -59,7 +60,7 @@ impl Timebase {
 
     pub fn now_utc(&self) -> DateTime<Utc> {
         let iso_date = unsafe {
-            let _lock = crate::spice_lock::get_spice_lock();
+            let lock = SpiceLock::acquire().unwrap();
             let format_c = CString::new("ISOC").unwrap().into_raw();
             let mut dst_bytes = Vec::<c_char>::with_capacity(128);
             spice::c::et2utc_c(
@@ -150,8 +151,8 @@ impl Timebase {
     }
 
     pub fn load_lsk() {
-        let _lock = crate::spice_lock::get_spice_lock();
-        spice::furnsh(Self::lsk_file().to_str().unwrap());
+        let lock = SpiceLock::acquire().unwrap();
+        lock.furnsh(Self::lsk_file().to_str().unwrap());
     }
 
     pub fn lsk_file() -> PathBuf {

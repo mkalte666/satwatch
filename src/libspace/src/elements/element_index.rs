@@ -1,6 +1,5 @@
 use crate::elements::element_store::ElementStore;
 use std::collections::HashMap;
-use std::str::Split;
 
 pub struct ElementIndex {
     by_name: Vec<u64>,

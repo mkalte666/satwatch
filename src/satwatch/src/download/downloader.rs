@@ -1,6 +1,6 @@
 use curl::easy::*;
 use std::fs::File;
-use std::io::{Error, Write};
+use std::io::Write;
 use std::path::PathBuf;
 use std::sync::mpsc::*;
 
