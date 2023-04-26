@@ -211,7 +211,7 @@ impl Material {
             }
             if let Some(location) = &self.cubemap_location {
                 if let Some(cubemap) = self.cubemap {
-                    gl.uniform_1_u32(Some(location), cubemap);
+                    gl.uniform_1_u32(Some(location), cubemap.0.into());
                     gl.bind_texture(glow::TEXTURE_CUBE_MAP, Some(cubemap));
                 }
             }

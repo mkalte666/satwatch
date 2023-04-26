@@ -19,20 +19,20 @@ version = "0.4.42"
 version = "4.0.0"
 
 [dependencies.glam]
-version = "0.20.2"
+version = "0.23.0"
 features = ["default", "serde"]
 
 [dependencies.imgui]
-git = "https://github.com/imgui-rs/imgui-rs"
-branch = "main"
+version = "0.11.0"
 
 [dependencies.imgui-sys]
-git = "https://github.com/imgui-rs/imgui-rs"
-branch = "main"
+version = "0.11.0"
 
 [dependencies.imgui-glow-renderer]
-git = "https://github.com/imgui-rs/imgui-rs"
-branch = "main"
+version = "0.11.0"
+
+[dependencies.imgui-sdl2-support]
+version = "0.11.0"
 
 [dependencies.lazy_static]
 version = "1.4.0"
@@ -47,16 +47,16 @@ version = "0.4"
 path = "../libspace"
 
 [dependencies.glow]
-version = "0.10.0"
+version = "0.12.0"
 
 [dependencies.sdl2]
-version = "^0.35"
+version = "0.34.5"
 features = ["default", "image"]
 
 [dependencies.serde]
 version = "1"
 
 [dependencies.toml]
-version = "0.5.8"
+version = "0.7.2"
 
 

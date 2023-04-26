@@ -15,7 +15,7 @@ use imgui_glow_renderer::AutoRenderer;
 use crate::main_loop::app_phase::AppPhase;
 use crate::util::imgui_logger::*;
 use crate::util::input_events::sdl_to_our_event;
-use crate::util::sdl2_imgui_tmpfix::SdlPlatform;
+use imgui_sdl2_support::SdlPlatform;
 use crate::world::world_control::WorldControl;
 use crate::world::world_ui::WorldUi;
 use glow::HasContext;
