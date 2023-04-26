@@ -1,17 +1,17 @@
 #!/bin/bash
 
+rm -rf target/cspice
+
+mkdir -p "target/cspice/download"
+mkdir -p "target/cspice/install"
+
 DL_DIR=$(readlink -f "target/cspice/download")
 INSTALL_DIR=$(readlink -f "target/cspice/install")
 
 CSPICE_URL="https://naif.jpl.nasa.gov/pub/naif/toolkit//C/PC_Linux_GCC_64bit/packages/cspice.tar.Z"
 ZIP_NAME="$DL_DIR/cpsice.tar.Z"
 
-#rm -rf target/cspice
-
-#mkdir -p "$DL_DIR"
-#mkdir -p "$INSTALL_DIR"
-
-#curl "$CSPICE_URL" -o "$ZIP_NAME"
+curl "$CSPICE_URL" -o "$ZIP_NAME"
 
 (
   cd "$INSTALL_DIR" || exit 1
