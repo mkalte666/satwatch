@@ -63,7 +63,7 @@ fn main() -> Result<(), String> {
     }
 
     let mut imgui = imgui::Context::create();
-
+    imgui.io_mut().config_flags.set(imgui::ConfigFlags::DOCKING_ENABLE, true);
     imgui
         .fonts()
         .add_font(&[imgui::FontSource::DefaultFontData { config: None }]);
